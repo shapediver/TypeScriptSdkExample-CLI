@@ -1,0 +1,18 @@
+# package directories
+node_modules
+jspm_packages
+
+# IDE
+vscode
+
+# Serverless directories
+.serverless
+
+# Webpack directories
+.webpack
+
+# TypeScript output
+lib
+
+# Config file
+config.ts
