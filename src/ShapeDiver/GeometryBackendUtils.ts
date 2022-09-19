@@ -42,6 +42,7 @@ export const closeSession = async (session: ISessionData) : Promise<void> => {
  * @param parameters Parameter values to use, default values will be used for parameters not specified
  * @param id Id of the export
  * @param maxWaitMsec Maximum duration to wait for result (in milliseconds), pass value < 0 to disable limit.
+ *                    A ShapeDiverError will be thrown in case max_wait_time is exceeded.
  */
 export const runExport = async (session: ISessionData, parameters: {[paramId: string]: string}, id: string, maxWaitMsec: number = -1) : Promise<ShapeDiverResponseExport> => {
 
