@@ -12,7 +12,7 @@ The CLI tool offered by this example allows to do things like:
   * list models which the user has access to
   * get access data for a ShapeDiver model
   * print information about a ShapeDiver model
-  * programmatically upload new Grasshopper models to ShapeDiver (coming soon)
+  * programmatically upload new Grasshopper models to ShapeDiver
 
 # Setup
 
@@ -45,6 +45,8 @@ Examples:
 
 "shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, domains, tags, decoration, etc)
 "shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports, etc)
+
+"upload-model -f "FILENAME" -t "TITLE"                    - create and upload model, wait for its confirmation, publish it (private visibility)
 
 $ ./shapediver-cli.ts list-latest-models --limit 1
 [
