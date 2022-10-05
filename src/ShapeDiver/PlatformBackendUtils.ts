@@ -6,7 +6,8 @@ import {
   SdPlatformResponseModelOwner, 
   SdPlatformResponseModelPublic, 
   SdPlatformSortingOrder,
-  SdPlatformModelQueryEmbeddableFields
+  SdPlatformModelQueryEmbeddableFields,
+  SdPlatformPolicyPermissionsModel
 } from "@shapediver/sdk.platform-api-sdk-v1";
 import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
@@ -44,7 +45,7 @@ export const initPlatformSdk = async () : Promise<SdPlatformSdk> => {
  * @param backend Pass true to return a ticket for backend access instead of embedding (frontend access)
  * @returns 
  */
-export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<IGeometryBackendAccessData> => {
+export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<{model: SdPlatformResponseModelOwner, accessData: IGeometryBackendAccessData}> => {
 
   const model = (await sdk.models.get<SdPlatformResponseModelOwner>(identifier, [
     backend ? SdPlatformModelGetEmbeddableFields.BackendTicket : SdPlatformModelGetEmbeddableFields.Ticket
@@ -54,13 +55,52 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
   const tokenData = (await sdk.modelTokens.create({id: identifier, scope: scopes})).data;
 
   return {
-    access_token: tokenData.access_token,
-    model_view_url: tokenData.model_view_url,
-    ticket: backend ? model.backend_ticket.ticket : model.ticket.ticket,
-    guid: model.guid,
-    scopes
+    model,
+    accessData: {
+      access_token: tokenData.access_token,
+      model_view_url: tokenData.model_view_url,
+      ticket: backend ? model.backend_ticket.ticket : model.ticket.ticket,
+      guid: model.guid,
+      scopes
+    }
   }
 };
+
+/**
+ * Get information about a model. Makes two request to the platform backend, to decide which information to embed.
+ * 
+ * @param sdk 
+ * @param identifier 
+ * @returns 
+ */
+export const getModelInfo = async (sdk: SdPlatformSdk, identifier: string) : Promise<SdPlatformResponseModelOwner> => {
+
+  let model = (await sdk.models.get<SdPlatformResponseModelOwner>(identifier)).data;
+  const fields : SdPlatformModelGetEmbeddableFields[] = [];
+
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedAccessDomains)) {
+    fields.push(SdPlatformModelGetEmbeddableFields.Accessdomains);
+    fields.push(SdPlatformModelGetEmbeddableFields.GlobalAccessdomains);
+  }
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedBackendProperties))
+    fields.push(SdPlatformModelGetEmbeddableFields.BackendProperties);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedBackendSystems))
+    fields.push(SdPlatformModelGetEmbeddableFields.BackendSystem);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedBookmark))
+    fields.push(SdPlatformModelGetEmbeddableFields.Bookmark);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedDecoration))
+    fields.push(SdPlatformModelGetEmbeddableFields.Decoration);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedOrganization))
+    fields.push(SdPlatformModelGetEmbeddableFields.Organization);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedTags))
+    fields.push(SdPlatformModelGetEmbeddableFields.Tags);
+  if (model.permissions.includes(SdPlatformPolicyPermissionsModel.embedUser))
+    fields.push(SdPlatformModelGetEmbeddableFields.User);
+
+  model = (await sdk.models.get<SdPlatformResponseModelOwner>(identifier, fields)).data;
+
+  return model;
+}
 
 /**
  * Query latest models in status 'done' which the user has access to.
@@ -89,3 +129,4 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
 
   return models;
 }
+
