@@ -1,6 +1,18 @@
 # TypeScriptSdkExample-CLI
 
-A simple example on how to use the ShapeDiver TypeScript SDKs for a CLI tool.
+A simple example on how to use the ShapeDiver TypeScript SDKs for a CLI tool. This example makes use of the following SDKs: 
+
+  * [ShapeDiver Platform SDK](https://www.npmjs.com/package/@shapediver/sdk.platform-api-sdk-v1)
+  * [ShapeDiver Geometry Backend SDK](https://www.npmjs.com/package/@shapediver/sdk.geometry-api-sdk-v2)
+
+Please find more information about our [APIs and SDKs](https://help.shapediver.com/doc/apis-and-sdks) on our help pages. 
+
+The CLI tool offered by this example allows to do things like: 
+
+  * list models which the user has access to
+  * get access data for a ShapeDiver model
+  * print information about a ShapeDiver model
+  * programmatically upload new Grasshopper models to ShapeDiver (coming soon)
 
 # Setup
 
