@@ -1,6 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
-import { displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform } from "./src/ShapeDiver/Utils"
+import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform } from "./src/ShapeDiver/Utils"
 
 const yargs = require("yargs")
 
@@ -104,6 +104,32 @@ yargs(process.argv.slice(2))
         },
     )
     .command(
+        "upload-model",
+        "Get geometry backend information of a model",
+        (yargs) => {
+            yargs
+                .options({
+                    f: {
+                        alias: "filename",
+                        description: "Filename of the model to be uploaded",
+                        type: "string",
+                        demandOption: true,
+                    },
+                    t: {
+                        alias: "title",
+                        description: "Title of the model",
+                        type: "string",
+                    },
+                })
+        },
+        async (argv) => {
+            await createAndUploadModel(
+                argv.f as string,
+                argv.t as string,
+            );
+        },
+    )
+    .command(
         "*",
         "",
         () => {
@@ -120,6 +146,8 @@ yargs(process.argv.slice(2))
             console.log('');
             console.log('"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, basic properties, domains, tags, decoration)');
             console.log('"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports)');
+            console.log('');
+            console.log('"upload-model -f "FILENAME" -t "TITLE"                    - create and upload model, wait for its confirmation, publish it (private visibility)');
             console.log('');
         }
     )

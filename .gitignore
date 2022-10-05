@@ -15,4 +15,8 @@ vscode
 lib
 
 # Config file
-config.ts
+config.ts*
+
+# Grasshopper files
+*.ghx
+*.gh

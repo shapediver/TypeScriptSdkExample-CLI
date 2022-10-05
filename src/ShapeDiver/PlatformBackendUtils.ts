@@ -7,7 +7,11 @@ import {
   SdPlatformResponseModelPublic, 
   SdPlatformSortingOrder,
   SdPlatformModelQueryEmbeddableFields,
-  SdPlatformPolicyPermissionsModel
+  SdPlatformPolicyPermissionsModel,
+  SdPlatformRequestModelCreate,
+  SdPlatformModelFileType,
+  SdPlatformModelVisibility,
+  SdPlatformRequestModelStatus,
 } from "@shapediver/sdk.platform-api-sdk-v1";
 import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
@@ -45,7 +49,7 @@ export const initPlatformSdk = async () : Promise<SdPlatformSdk> => {
  * @param backend Pass true to return a ticket for backend access instead of embedding (frontend access)
  * @returns 
  */
-export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<{model: SdPlatformResponseModelOwner, accessData: IGeometryBackendAccessData}> => {
+export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<{model: SdPlatformResponseModelOwner, access_data: IGeometryBackendAccessData}> => {
 
   const model = (await sdk.models.get<SdPlatformResponseModelOwner>(identifier, [
     backend ? SdPlatformModelGetEmbeddableFields.BackendTicket : SdPlatformModelGetEmbeddableFields.Ticket
@@ -56,7 +60,7 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
 
   return {
     model,
-    accessData: {
+    access_data: {
       access_token: tokenData.access_token,
       model_view_url: tokenData.model_view_url,
       ticket: backend ? model.backend_ticket.ticket : model.ticket.ticket,
@@ -130,3 +134,53 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
   return models;
 }
 
+/**
+ * Create a model
+ * 
+ * @param sdk
+ * @param filename 
+ * @param title 
+ * @returns 
+ */
+export const createModel = async (sdk: SdPlatformSdk, filename: string, title?: string) : Promise<{model: SdPlatformResponseModelOwner, access_data: IGeometryBackendAccessData}> => {
+
+  const filename_lower = filename.toLocaleLowerCase();
+  if (!filename_lower.endsWith('.ghx') && !filename_lower.endsWith('.gh'))
+    throw new Error('File ending must be ".gh" or ".ghx"')
+
+  const body : SdPlatformRequestModelCreate = {
+    filename,
+    ftype: filename.toLocaleLowerCase().endsWith('.ghx') ? SdPlatformModelFileType.GHX : SdPlatformModelFileType.GH,
+    title,
+    backendaccess: true,
+    visibility: SdPlatformModelVisibility.Private
+  };
+
+  const scopes = [
+    SdPlatformModelTokenScopes.GroupOwner,
+    SdPlatformModelTokenScopes.GroupView
+  ];
+  const model = (await sdk.models.create(body)).data;
+  const token = (await sdk.modelTokens.create({id: model.id, scope: scopes})).data;
+  
+  return {
+    model,
+    access_data: {
+      access_token: token.access_token,
+      model_view_url: token.model_view_url,
+      guid: token.guid,
+      scopes
+    }
+  };
+}
+
+/**
+ * Empty model patch request, which will cause the platform backend to update the model's status based on the geometry backend.
+ * @param sdk 
+ * @param model_id 
+ * @returns 
+ */
+export const patchModelStatus = async (sdk: SdPlatformSdk, model_id: string, status?: SdPlatformRequestModelStatus) : Promise<SdPlatformResponseModelOwner> => {
+    const model = (await sdk.models.patch(model_id, {status})).data;
+    return model;
+}
