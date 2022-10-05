@@ -1,4 +1,13 @@
-import { create, SdPlatformSdk, SdPlatformModelGetEmbeddableFields, SdPlatformModelTokenScopes, SdPlatformResponseModelOwner } from "@shapediver/sdk.platform-api-sdk-v1";
+import { 
+  create, 
+  SdPlatformSdk, 
+  SdPlatformModelGetEmbeddableFields, 
+  SdPlatformModelTokenScopes, 
+  SdPlatformResponseModelOwner, 
+  SdPlatformResponseModelPublic, 
+  SdPlatformSortingOrder,
+  SdPlatformModelQueryEmbeddableFields
+} from "@shapediver/sdk.platform-api-sdk-v1";
 import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
 
@@ -52,3 +61,31 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
     scopes
   }
 };
+
+/**
+ * Query latest models in status 'done' which the user has access to.
+ * 
+ * @param sdk 
+ * @param limit How many models to return (upper limit)
+ * @param own If true filter models owned by the user.
+ * @returns 
+ */
+export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: boolean) : Promise<SdPlatformResponseModelPublic[]> => {
+
+  const filters = {
+    'status[=]': 'done'
+  };
+  if (own) {
+    filters['user_id[=]'] = sdk.authorization.authData.userId;
+  }
+
+  const models = (await sdk.models.query({
+    sorters: { created_at: SdPlatformSortingOrder.Desc},
+    limit,
+    filters,
+    embed: [SdPlatformModelQueryEmbeddableFields.User],
+    strict_limit: true
+  })).data.result;
+
+  return models;
+}

@@ -1,26 +1,18 @@
 {
-  "name": "sls-simpleversioning",
+  "name": "shapediver-cli",
   "version": "1.0.0",
-  "description": "A simple example on how to use the ShapeDiver Platform Backend API for strong authorization of calls to the Geometry Backend API, and identifying models based on their slug.",
+  "description": "A simple example on how to use the ShapeDiver SDKs for a CLI tool.",
   "main": "handler.js",
-  "scripts": {
-    "cli": "ts-node src/handlers/cli",
-    "local": "export AWS_PROFILE=serverless_cli; sls invoke local -f process",
-    "sls": "export AWS_PROFILE=serverless_cli; sls",
-    "slsdebug": "export AWS_PROFILE=serverless_cli; export SLS_DEBUG=* sls",
-    "logs": "export AWS_PROFILE=serverless_cli; sls logs -f process"
-  },
+  "scripts": {},
   "dependencies": {
-    "@shapediver/sdk.geometry-api-sdk-v2": "^1.0.26",
-    "@shapediver/sdk.platform-api-sdk-v1": "^2.9.14",
-    "yargs": "^17.5.1"
+    "@shapediver/sdk.geometry-api-sdk-v2": "^1.1.0",
+    "@shapediver/sdk.platform-api-sdk-v1": "^2.11.8",
+    "yargs": "^17.6.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.103",
-    "@types/node": "^18.7.16",
-    "@types/serverless": "^3.12.8",
-    "serverless-bundle": "^5.5.0",
-    "serverless-plugin-log-retention": "^2.0.0"
+    "@types/node": "^18.8.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
   },
   "author": "ShapeDiver GmbH",
   "license": "MIT"
