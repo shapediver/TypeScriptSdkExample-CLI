@@ -12,7 +12,7 @@ npm install
 
 ## Create config.ts from config.ts.template
 
-Copy config.ts.template to config.ts and fill in your data.
+Copy `config.ts.template` to `config.ts` and fill in your data.
 You will need a ShapeDiver Account to create a pair of [Platform API access keys](https://help.shapediver.com/doc/platform-api-access-keys).
 In case you are not using the main shared ShapeDiver Platform, please adapt the `baseUrl`.
 
@@ -29,10 +29,10 @@ Examples:
 
 "shapediver-cli.ts list-latest-models"                   - list 10 latest models owned by the user
 "shapediver-cli.ts list-latest-models --own false"       - list 10 latest models which the user has access to
-"shapediver-cli.ts list-latest-models --limit 3"         - list 3 latest models howned by the user
+"shapediver-cli.ts list-latest-models --limit 3"         - list 3 latest models owned by the user
 
-"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, basic properties, domains, tags, decoration)
-"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports)
+"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, domains, tags, decoration, etc)
+"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports, etc)
 
 $ ./shapediver-cli.ts list-latest-models --limit 1
 [
