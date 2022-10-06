@@ -48,7 +48,20 @@ Examples:
 
 "upload-model -f "FILENAME" -t "TITLE"                    - create and upload model, wait for its confirmation, publish it (private visibility)
 
+$
+```
+
+### List latest model
+<details>
+<summary>
+
+```
 $ ./shapediver-cli.ts list-latest-models --limit 1
+```
+
+</summary>
+
+```
 [
   {
     status: 'done',
@@ -136,9 +149,21 @@ $ ./shapediver-cli.ts list-latest-models --limit 1
     ]
   }
 ]
+```
 
+</details>
 
+### Get Geometry Backend information for model
+<details>
+<summary>
+
+```
 $ ./shapediver-cli.ts model-info-geometry -i imagetomeshprojector-5
+```
+
+</summary>
+
+```
 {
   version: '2.5.2',
   sessionId: '3d33b43a-4897-4181-b691-0e93fe8ce2f5',
@@ -412,9 +437,21 @@ $ ./shapediver-cli.ts model-info-geometry -i imagetomeshprojector-5
     }
   }
 }
+```
 
+</details>
 
+### Get Platform Backend information for model
+<details>
+<summary>
+
+```
 $ ./shapediver-cli.ts model-info-platform -i imagetomeshprojector-5
+```
+
+</summary>
+
+```
 {
   status: 'done',
   created_at: 1662580563,
@@ -517,6 +554,6 @@ $ ./shapediver-cli.ts model-info-platform -i imagetomeshprojector-5
     'embed_organization'
   ]
 }
-
 ```
 
+</details>
