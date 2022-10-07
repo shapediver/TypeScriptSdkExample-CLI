@@ -16,6 +16,14 @@ The CLI tool offered by this example allows to do things like:
 
 # Setup
 
+## Prerequisites
+
+Install node.js. Possibilities and related reading: 
+
+  * [https://github.com/nvm-sh/nvm](Node Version Manager)
+  * [https://nodejs.org/](nodejs.org)
+  * [https://code.visualstudio.com/docs/nodejs/nodejs-tutorial](Node.js tutorial in Visual Studio Code)
+
 ## Install dependencies
 
 ```
