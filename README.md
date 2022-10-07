@@ -57,7 +57,7 @@ Examples:
 "shapediver-cli.ts upload-model -f FILENAME -t TITLE"     - Create and upload model, wait for checking process, publish model (private visibility)
 "shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"
 
-"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days
+"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days (credit calculation formula as of 2022-10-07)
 "shapediver-cli.ts credit-usage -d 90"                    - Query credit usage for the past 90 days
 "shapediver-cli.ts credit-usage --from 20220901 --to 20220930"
                                                           - Query credit usage from 20220901 to 20220930

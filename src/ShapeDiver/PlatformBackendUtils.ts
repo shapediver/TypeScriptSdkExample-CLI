@@ -211,7 +211,8 @@ export interface ICreditUsage {
 }
 
 /**
- * Query the credit usage aggregated for a user.
+ * Query the credit usage aggregated for a user. 
+ * Note: This corresponds to the credit calculation formula as of 2022-10-07.
  * @param sdk 
  * @param user_id 
  * @param from epoch timestamp, start date
