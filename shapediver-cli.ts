@@ -1,6 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
-import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform, publishModel } from "./src/ShapeDiver/Utils"
+import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform, displayUserCreditUsage, publishModel } from "./src/ShapeDiver/Utils"
 
 const yargs = require("yargs")
 
@@ -150,6 +150,43 @@ yargs(process.argv.slice(2))
         },
     )
     .command(
+        "credit-usage",
+        "Query per-user credit usage.",
+        (yargs) => {
+            yargs
+                .options({
+                    i: {
+                        alias: "id",
+                        description: "User identifier (slug, id, username), defaults to authenticated user",
+                        type: "string",
+                    },
+                    d: {
+                        alias: "days",
+                        description: "Number of past days to query, defaults to 31",
+                        type: "number",
+                    },
+                    f: {
+                        alias: "from",
+                        description: "Query from this daystimestamp (YYYYMMDD), use this instead of --days",
+                        type: "string"
+                    },
+                    t: {
+                        alias: "to",
+                        description: "Query to this daystimestamp (YYYYMMDD), use this instead of --days",
+                        type: "string"
+                    }
+                })
+        },
+        async (argv) => {
+            await displayUserCreditUsage(
+                argv.i as string,
+                argv.d ? argv.d as number : 31,
+                argv.f as string,
+                argv.t as string,
+            );
+        },
+    )
+    .command(
         "*",
         "",
         () => {
@@ -169,6 +206,11 @@ yargs(process.argv.slice(2))
             console.log('');
             console.log('"shapediver-cli.ts upload-model -f FILENAME -t TITLE"     - Create and upload model, wait for checking process, publish model (private visibility)');
             console.log('"shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"');
+            console.log('');
+            console.log('"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days');
+            console.log('"shapediver-cli.ts credit-usage -d 90"                    - Query credit usage for the past 90 days');
+            console.log('"shapediver-cli.ts credit-usage --from 20220901 --to 20220930"');
+            console.log('                                                          - Query credit usage from 20220901 to 20220930');
             console.log('');
         }
     )

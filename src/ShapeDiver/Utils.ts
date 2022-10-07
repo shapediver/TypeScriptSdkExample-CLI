@@ -1,9 +1,9 @@
 import { initSession, ISessionData, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
-import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, IPlatformBackendModelData, listLatestModels, patchModelStatus } from "./PlatformBackendUtils";
+import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, IPlatformBackendModelData, listLatestModels, patchModelStatus, queryUserCreditUsage } from "./PlatformBackendUtils";
 import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -101,4 +101,37 @@ export const publishModel = async (identifier: string) : Promise<void> => {
     console.log(geometry_data.dto);
 
     await publishModel_(sdk, platform_data, geometry_data);
+}
+
+const dayTimestampToEpoch = (ts: string) : number => {
+    if (ts.length != 8) 
+        throw new Error('Provide a timestamp in format YYYYMMDD, e.g. 20220815');
+    let num = 0;
+    try {
+        const y = Number(ts.substring(0, 4));
+        const m = Number(ts.substring(4, 6)) - 1;
+        const d = Number(ts.substring(6, 8));
+        num = Math.round(Date.UTC(y, m, d) / 1000);
+    } catch {
+        throw new Error('Provide a timestamp in format YYYYMMDD, e.g. 20220815');
+    }
+    return num;
+}
+
+export const displayUserCreditUsage = async (identifier: string, days: number, from_s: string, to_s: string) : Promise<void> => {
+
+    const sdk = await initPlatformSdk();
+
+    const user_id = identifier ? identifier : sdk.authorization.authData.userId;
+
+    if (from_s && !to_s || !from_s && to_s) {
+        throw new Error('Specify "--days", or "--from" and "--to" timestamps.');
+    }
+
+    const to = to_s ? dayTimestampToEpoch(to_s) : Math.round(Date.now() / 1000);
+    const from = from_s ? dayTimestampToEpoch(from_s) : to - (days + 1) * 86400;
+  
+    const data = await queryUserCreditUsage(sdk, user_id, from, to, SdPlatformResponseAnalyticsTimestampType.Day);
+
+    console.table(data);
 }

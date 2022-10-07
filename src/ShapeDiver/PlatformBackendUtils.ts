@@ -12,6 +12,7 @@ import {
   SdPlatformModelFileType,
   SdPlatformModelVisibility,
   SdPlatformRequestModelStatus,
+  SdPlatformResponseAnalyticsTimestampType,
 } from "@shapediver/sdk.platform-api-sdk-v1";
 import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
@@ -191,6 +192,88 @@ export const createModel = async (sdk: SdPlatformSdk, filename: string, title?: 
  * @returns 
  */
 export const patchModelStatus = async (sdk: SdPlatformSdk, model_id: string, status?: SdPlatformRequestModelStatus) : Promise<SdPlatformResponseModelOwner> => {
-    const model = (await sdk.models.patch(model_id, {status})).data;
-    return model;
+  const model = (await sdk.models.patch(model_id, {status})).data;
+  return model;
 }
+
+/**
+ * Credit usage
+ */
+export interface ICreditUsage {
+  /** timestamp */
+  timestamp : string,
+  /** credits spent for sessions (10 minute periods) */
+  sessions : number,
+  /** credits spent for exports */
+  exports : number,
+  /** credits spent for computations */
+  computations : number,
+}
+
+/**
+ * Query the credit usage aggregated for a user.
+ * @param sdk 
+ * @param user_id 
+ * @param from epoch timestamp, start date
+ * @param to epoch timestamp, end date
+ * @param type type of aggregated, defaults to daily (daily and monthly are available)
+ * @returns 
+ */
+export const queryUserCreditUsage = async (sdk: SdPlatformSdk, user_id: string, from: number, to: number, type: SdPlatformResponseAnalyticsTimestampType = SdPlatformResponseAnalyticsTimestampType.Day) : Promise<ICreditUsage[]> => {
+
+  const filters = {
+    'user_id[=]': user_id,
+    'timestamp_type[=]': type,
+    'timestamp_date[>=]': from,
+    'timestamp_date[<=]': to,
+  };
+
+  const limit = 100;
+ 
+  const result = (await sdk.userAnalytics.query({
+    sorters: { timestamp_date: SdPlatformSortingOrder.Asc},
+    filters,
+    limit,
+    strict_limit: true
+  }));
+
+  if (result.data.pagination.next_offset) {
+    console.warn(`Result is limited to ${limit} items, more items are available.`);
+  }
+
+  const items : ICreditUsage[] = []
+  const aggregated : ICreditUsage = {
+    timestamp: 'SUM',
+    sessions: 0,
+    exports: 0,
+    computations: 0,
+  }
+
+  for (const item of result.data.result)
+  {
+    const sessions = item.data.export.sum;
+    
+    let exports = 0;
+    exports += Math.ceil(0.1 * (item.data.customize?.sum_desktop || 0));
+    exports += Math.ceil(0.1 * (item.data.customize?.sum_backend || 0));
+
+    const computations = item.data.embedded.billable_count;
+
+    items.push({
+      timestamp: item.timestamp,
+      sessions, 
+      exports,
+      computations,
+    });
+
+    aggregated.computations += computations;
+    aggregated.exports += exports;
+    aggregated.sessions += sessions;
+  }
+
+  items.push(aggregated);
+
+  return items;
+}
+
+

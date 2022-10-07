@@ -47,7 +47,12 @@ Examples:
 "shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - Get geometry backend information of a model (parameters, outputs, exports)
 
 "shapediver-cli.ts upload-model -f FILENAME -t TITLE"     - Create and upload model, wait for checking process, publish model (private visibility)
-"shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"    - 
+"shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"
+
+"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days
+"shapediver-cli.ts credit-usage -d 90"                    - Query credit usage for the past 90 days
+"shapediver-cli.ts credit-usage --from 20220901 --to 20220930"
+                                                          - Query credit usage from 20220901 to 20220930
 
 $
 ```
@@ -973,6 +978,57 @@ Publishing confirmed model...
   description: '',
   thumbnail_url: 'https://sduse1-assets.shapediver.com/images/model/7e6158a6-df50-42ff-8484-069267d07b74_thumb.png?v=1665151080'
 }
+```
+
+</details>
+
+
+### Query credit usage
+<details>
+<summary>
+
+```
+$ ./shapediver-cli.ts credit-usage --from 20220901 --to 20220930
+```
+
+</summary>
+
+```
+┌─────────┬────────────┬──────────┬─────────┬──────────────┐
+│ (index) │ timestamp  │ sessions │ exports │ computations │
+├─────────┼────────────┼──────────┼─────────┼──────────────┤
+│    0    │ '20220901' │    0     │    0    │      0       │
+│    1    │ '20220902' │    0     │    0    │      0       │
+│    2    │ '20220903' │    0     │    0    │      0       │
+│    3    │ '20220904' │    0     │    0    │      0       │
+│    4    │ '20220905' │    0     │    0    │      0       │
+│    5    │ '20220906' │    0     │    0    │      0       │
+│    6    │ '20220907' │    0     │    2    │      0       │
+│    7    │ '20220908' │    1     │    2    │      0       │
+│    8    │ '20220909' │    0     │    0    │      0       │
+│    9    │ '20220910' │    0     │    0    │      0       │
+│   10    │ '20220911' │    0     │    0    │      0       │
+│   11    │ '20220912' │    0     │    0    │      0       │
+│   12    │ '20220913' │    0     │    0    │      0       │
+│   13    │ '20220914' │    0     │    0    │      0       │
+│   14    │ '20220915' │    0     │    0    │      0       │
+│   15    │ '20220916' │    0     │    0    │      0       │
+│   16    │ '20220917' │    0     │    0    │      0       │
+│   17    │ '20220918' │    0     │    0    │      0       │
+│   18    │ '20220919' │    0     │    0    │      0       │
+│   19    │ '20220920' │    0     │    0    │      0       │
+│   20    │ '20220921' │    0     │    0    │      0       │
+│   21    │ '20220922' │    0     │    0    │      0       │
+│   22    │ '20220923' │    0     │    0    │      0       │
+│   23    │ '20220924' │    0     │    0    │      0       │
+│   24    │ '20220925' │    0     │    0    │      0       │
+│   25    │ '20220926' │    0     │    0    │      0       │
+│   26    │ '20220927' │    0     │    0    │      0       │
+│   27    │ '20220928' │    0     │    0    │      0       │
+│   28    │ '20220929' │    0     │    0    │      0       │
+│   29    │ '20220930' │    0     │    0    │      0       │
+│   30    │   'SUM'    │    1     │    4    │      0       │
+└─────────┴────────────┴──────────┴─────────┴──────────────┘
 ```
 
 </details>
