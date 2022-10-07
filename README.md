@@ -20,9 +20,9 @@ The CLI tool offered by this example allows to do things like:
 
 Install node.js. Possibilities and related reading: 
 
-  * [https://github.com/nvm-sh/nvm](Node Version Manager)
-  * [https://nodejs.org/](nodejs.org)
-  * [https://code.visualstudio.com/docs/nodejs/nodejs-tutorial](Node.js tutorial in Visual Studio Code)
+ * [Node Version Manager](https://github.com/nvm-sh/nvm)
+ * [nodejs.org](https://nodejs.org/)
+ * [Node.js tutorial in Visual Studio Code](https://code.visualstudio.com/docs/nodejs/nodejs-tutorial)
 
 ## Install dependencies
 
