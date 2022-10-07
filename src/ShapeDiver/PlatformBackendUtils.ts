@@ -17,6 +17,16 @@ import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
 
 /**
+ * Information about a model
+ */
+export interface IPlatformBackendModelData {
+  /** Platform backend model DTO */
+  model: SdPlatformResponseModelOwner, 
+  /** Data required to access a model on its Geometry Backend system */
+  access_data: IGeometryBackendAccessData
+}
+
+/**
  * Create an instance of the Platform Backend SDK and authenticate.
  * @returns 
  */
@@ -49,7 +59,7 @@ export const initPlatformSdk = async () : Promise<SdPlatformSdk> => {
  * @param backend Pass true to return a ticket for backend access instead of embedding (frontend access)
  * @returns 
  */
-export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<{model: SdPlatformResponseModelOwner, access_data: IGeometryBackendAccessData}> => {
+export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string, allowExports: boolean, backend: boolean) : Promise<IPlatformBackendModelData> => {
 
   const model = (await sdk.models.get<SdPlatformResponseModelOwner>(identifier, [
     backend ? SdPlatformModelGetEmbeddableFields.BackendTicket : SdPlatformModelGetEmbeddableFields.Ticket
@@ -142,7 +152,7 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
  * @param title 
  * @returns 
  */
-export const createModel = async (sdk: SdPlatformSdk, filename: string, title?: string) : Promise<{model: SdPlatformResponseModelOwner, access_data: IGeometryBackendAccessData}> => {
+export const createModel = async (sdk: SdPlatformSdk, filename: string, title?: string) : Promise<IPlatformBackendModelData> => {
 
   const filename_lower = filename.toLocaleLowerCase();
   if (!filename_lower.endsWith('.ghx') && !filename_lower.endsWith('.gh'))

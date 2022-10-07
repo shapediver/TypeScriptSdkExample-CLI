@@ -1,9 +1,9 @@
-import { initSession, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
-import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, listLatestModels, patchModelStatus } from "./PlatformBackendUtils";
+import { initSession, ISessionData, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
+import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, IPlatformBackendModelData, listLatestModels, patchModelStatus } from "./PlatformBackendUtils";
 import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SdPlatformModelStatus, SdPlatformRequestModelStatus } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -60,8 +60,13 @@ export const createAndUploadModel = async (filename: string, title?: string) : P
 
     console.log(geometry_data.dto);
 
+    await publishModel_(sdk, platform_data, geometry_data);
+}
+
+const publishModel_ = async (sdk: SdPlatformSdk, platform_data: IPlatformBackendModelData, geometry_data: ISessionData) : Promise<void> => {
+
     if (geometry_data.dto.model.stat === 'pending') {
-        console.log('Model checking in progress, you will be notified once it completes.');
+        console.log('Model checking is pending, you will be notified once it completes.');
     } 
     else if (geometry_data.dto.model.stat === 'denied') {
         console.error(`Model was denied: ${geometry_data.dto.model.msg}`);
@@ -69,7 +74,7 @@ export const createAndUploadModel = async (filename: string, title?: string) : P
     else if (geometry_data.dto.model.stat === 'confirmed') {
         console.log('Congratulations, your model was confirmed!');
     }
-
+ 
     console.log('Updating platform model status...');
     let model = await patchModelStatus(sdk, platform_data.model.id);
     if (model.status === SdPlatformModelStatus.Confirmed) {
@@ -78,4 +83,22 @@ export const createAndUploadModel = async (filename: string, title?: string) : P
     }
    
     console.log(model);
+}
+
+export const publishModel = async (identifier: string) : Promise<void> => {
+
+    const sdk = await initPlatformSdk();
+    const platform_data = await getModelAccessData(sdk, identifier, true, true);
+
+    if (platform_data.model.status === SdPlatformModelStatus.Done) {
+        console.log('Your model has already been published!');
+        return;
+    }
+
+    let geometry_data = await initSession(platform_data.access_data);
+    geometry_data = await waitForModelCheck(geometry_data);
+
+    console.log(geometry_data.dto);
+
+    await publishModel_(sdk, platform_data, geometry_data);
 }

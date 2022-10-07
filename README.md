@@ -35,18 +35,19 @@ $ ./shapediver-cli.ts
 
 Examples:
 
-"shapediver-cli.ts model-access-data -i IDENTIFIER"        - get embedding access data for model (IDENTIFIER = slug, id, guid)
-"shapediver-cli.ts model-access-data -i IDENTIFIER -b"     - get backend access data for model 
-"shapediver-cli.ts model-access-data -i IDENTIFIER -b -e"  - get backend access data for model, allowing exports
+"shapediver-cli.ts model-access-data -i IDENTIFIER"       - Get embedding access data for model (IDENTIFIER = slug, id, guid)
+"shapediver-cli.ts model-access-data -i IDENTIFIER -b"    - Get backend access data for model 
+"shapediver-cli.ts model-access-data -i IDENTIFIER -b -e" - Get backend access data for model, allowing exports
 
-"shapediver-cli.ts list-latest-models"                   - list 10 latest models owned by the user
-"shapediver-cli.ts list-latest-models --own false"       - list 10 latest models which the user has access to
-"shapediver-cli.ts list-latest-models --limit 3"         - list 3 latest models owned by the user
+"shapediver-cli.ts list-latest-models"                    - List 10 latest models owned by the user
+"shapediver-cli.ts list-latest-models --own false"        - List 10 latest models which the user has access to
+"shapediver-cli.ts list-latest-models --limit 3"          - List 3 latest models howned by the user
 
-"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, domains, tags, decoration, etc)
-"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports, etc)
+"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - Get platform backend information of a model (user, basic properties, domains, tags, decoration)
+"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - Get geometry backend information of a model (parameters, outputs, exports)
 
-"upload-model -f "FILENAME" -t "TITLE"                    - create and upload model, wait for its confirmation, publish it (private visibility)
+"shapediver-cli.ts upload-model -f FILENAME -t TITLE"     - Create and upload model, wait for checking process, publish model (private visibility)
+"shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"    - 
 
 $
 ```
@@ -553,6 +554,424 @@ $ ./shapediver-cli.ts model-info-platform -i imagetomeshprojector-5
     'delete',
     'embed_organization'
   ]
+}
+```
+
+</details>
+
+
+### Upload a model
+<details>
+<summary>
+
+```
+$ ./shapediver-cli.ts upload-model -f ./ARRS_texturized.ghx -t ARRS_texturized
+```
+
+</summary>
+
+```
+Create model...
+Upload model...
+Waiting for model check to start...
+Maximum allowed computation time: 30000
+Waiting for model check to finish...
+Waiting for model check to finish...
+Model status: confirmed
+{
+  version: '2.5.2',
+  model: {
+    id: '7e6158a6-df50-42ff-8484-069267d07b74',
+    stat: 'confirmed',
+    createdate: '2022-10-07T13:57:44.868Z',
+    name: 'ARRS_texturized'
+  },
+  setting: {
+    auth: { ticket: [Object], token: {} },
+    compute: {
+      deny_scripts: false,
+      ftype: 'ghx',
+      initial_warmup: false,
+      max_comp_time: 30000,
+      max_export_size: 536870912,
+      max_idle_minutes: 30,
+      max_model_size: 536870912,
+      max_output_size: 536870912,
+      max_wait_time: 0,
+      num_loaded_max: 0,
+      num_loaded_min: 2,
+      num_preloaded_min: 0,
+      trust: ''
+    }
+  },
+  file: {
+    download: 'https://sdr7euc1-nocdn.eu-central-1.shapediver.com/api/v2/model/7e6158a6-df50-42ff-8484-069267d07b74/file/download'
+  },
+  statistic: {
+    comptime: 1923,
+    lastview: '2022-10-07T13:57:56.996Z',
+    memUsage: -3813376,
+    numcomp: 1,
+    numsessions: 0,
+    requesttime: 3518,
+    size: 1823858
+  },
+  parameters: {
+    '86a6e7be-2b08-47b8-8ca4-8f81d75780f7': {
+      id: '86a6e7be-2b08-47b8-8ca4-8f81d75780f7',
+      choices: [Array],
+      defval: '0',
+      name: 'Export format',
+      type: 'StringList',
+      visualization: 'dropdown',
+      order: 133,
+      hidden: false
+    },
+    'ae479df2-1153-45c2-8897-4de1dc5e8f05': {
+      id: 'ae479df2-1153-45c2-8897-4de1dc5e8f05',
+      defval: 'false',
+      name: 'Wall side',
+      type: 'Bool',
+      visualization: 'toggle',
+      order: 543,
+      hidden: false
+    },
+    '49746232-9136-42e4-872f-9b9c2f7bd121': {
+      id: '49746232-9136-42e4-872f-9b9c2f7bd121',
+      decimalplaces: 0,
+      defval: '3',
+      min: 1,
+      max: 6,
+      name: 'Count H',
+      type: 'Int',
+      visualization: 'slider',
+      order: 816,
+      hidden: false
+    },
+    'd2aa070b-3d6e-47ed-ac64-ffed14a4a392': {
+      id: 'd2aa070b-3d6e-47ed-ac64-ffed14a4a392',
+      decimalplaces: 0,
+      defval: '2',
+      min: 1,
+      max: 4,
+      name: 'Count V',
+      type: 'Int',
+      visualization: 'slider',
+      order: 865,
+      hidden: false
+    },
+    '8b874783-08cd-4a5c-9d82-0ec13e2986bc': {
+      id: '8b874783-08cd-4a5c-9d82-0ec13e2986bc',
+      defval: 'true',
+      name: 'Back plates',
+      type: 'Bool',
+      visualization: 'toggle',
+      order: 1064,
+      hidden: false
+    },
+    'f40448dc-59ab-4fb9-a88f-628ef484ab8b': {
+      id: 'f40448dc-59ab-4fb9-a88f-628ef484ab8b',
+      decimalplaces: 0,
+      defval: '330',
+      min: 200,
+      max: 600,
+      name: 'Spacing vertical',
+      type: 'Int',
+      visualization: 'slider',
+      order: 676,
+      hidden: false
+    },
+    'fa8d1166-d611-4189-955b-73aa9c7aaa31': {
+      id: 'fa8d1166-d611-4189-955b-73aa9c7aaa31',
+      decimalplaces: 0,
+      defval: '600',
+      min: 300,
+      max: 600,
+      name: 'Spacing horizontal',
+      type: 'Int',
+      visualization: 'slider',
+      order: 613,
+      hidden: false
+    },
+    'eac642f3-e360-4d00-ae67-869dc00abde9': {
+      id: 'eac642f3-e360-4d00-ae67-869dc00abde9',
+      decimalplaces: 0,
+      defval: '22',
+      min: 10,
+      max: 30,
+      name: 'Board thickness',
+      type: 'Int',
+      visualization: 'slider',
+      order: 247,
+      hidden: false
+    },
+    'e5ed8216-1dd8-430d-8c29-d997b94ce5c1': {
+      id: 'e5ed8216-1dd8-430d-8c29-d997b94ce5c1',
+      decimalplaces: 0,
+      defval: '250',
+      min: 120,
+      max: 300,
+      name: 'Board depth',
+      type: 'Int',
+      visualization: 'slider',
+      order: 432,
+      hidden: false
+    },
+    'e2a3e14f-199b-410d-ad2c-8d48015863d4': {
+      id: 'e2a3e14f-199b-410d-ad2c-8d48015863d4',
+      decimalplaces: 0,
+      defval: '500',
+      min: 0,
+      max: 1000,
+      name: 'Texturescale',
+      type: 'Int',
+      visualization: 'slider',
+      order: -175,
+      hidden: false
+    },
+    '5a072830-e1d3-487b-be6e-bd8123d77631': {
+      id: '5a072830-e1d3-487b-be6e-bd8123d77631',
+      defval: 'false',
+      name: 'Rotated',
+      type: 'Bool',
+      visualization: 'toggle',
+      order: 1026,
+      hidden: false
+    },
+    '7d1ca1b8-0348-495c-a059-1981f2a14447': {
+      id: '7d1ca1b8-0348-495c-a059-1981f2a14447',
+      decimalplaces: 1,
+      defval: '3.5',
+      min: 1,
+      max: 6,
+      name: 'Pocket size factor',
+      type: 'Float',
+      visualization: 'slider',
+      order: 329,
+      hidden: false
+    },
+    'db9a259d-df99-4bf0-8542-f447b45b68b5': {
+      id: 'db9a259d-df99-4bf0-8542-f447b45b68b5',
+      decimalplaces: 2,
+      defval: '0.25',
+      min: 0.1,
+      max: 0.5,
+      name: 'Notch depth factor',
+      type: 'Float',
+      visualization: 'slider',
+      order: 163,
+      hidden: false
+    },
+    '8c42ff7d-6bdb-406a-b9dd-0d0d19f06a34': {
+      id: '8c42ff7d-6bdb-406a-b9dd-0d0d19f06a34',
+      decimalplaces: 0,
+      defval: '150',
+      min: 25,
+      max: 200,
+      name: 'Side board',
+      type: 'Int',
+      visualization: 'slider',
+      order: 718,
+      hidden: false
+    },
+    '1d8bae6d-7f22-4a02-8634-c3cffc968ece': {
+      id: '1d8bae6d-7f22-4a02-8634-c3cffc968ece',
+      decimalplaces: 0,
+      defval: '100',
+      min: 0,
+      max: 100,
+      name: 'Rotation %',
+      type: 'Int',
+      visualization: 'slider',
+      order: 982,
+      hidden: false
+    },
+    'b616a953-afa3-4f05-a536-4ad36ad4118a': {
+      id: 'b616a953-afa3-4f05-a536-4ad36ad4118a',
+      decimalplaces: 0,
+      defval: '200',
+      min: 100,
+      max: 200,
+      name: 'Top board',
+      type: 'Int',
+      visualization: 'slider',
+      order: 759,
+      hidden: false
+    },
+    '08a9d69c-deec-4e74-a0ce-247239b21abd': {
+      id: '08a9d69c-deec-4e74-a0ce-247239b21abd',
+      choices: [Array],
+      defval: '2',
+      name: 'List',
+      type: 'StringList',
+      visualization: 'dropdown',
+      order: 225,
+      hidden: false
+    },
+    '88e4b20a-0fe9-4127-90c5-a44137caf9a0': {
+      id: '88e4b20a-0fe9-4127-90c5-a44137caf9a0',
+      defval: '0xffffffff',
+      name: 'Color',
+      type: 'Color',
+      visualization: 'swatch',
+      order: 181,
+      hidden: false
+    },
+    'b4472d08-21f1-47e8-b420-08995c906f39': {
+      id: 'b4472d08-21f1-47e8-b420-08995c906f39',
+      choices: [Array],
+      defval: '1',
+      name: 'TextureBase',
+      type: 'StringList',
+      visualization: 'dropdown',
+      order: 36,
+      hidden: false
+    },
+    '37228913-c602-4f72-87d1-3bdf350d86af': {
+      id: '37228913-c602-4f72-87d1-3bdf350d86af',
+      defval: 'true',
+      name: 'Wall',
+      type: 'Bool',
+      visualization: 'toggle',
+      order: 952,
+      hidden: false
+    },
+    'be66dbca-c11a-40f2-89f3-1cf955d50bbc': {
+      id: 'be66dbca-c11a-40f2-89f3-1cf955d50bbc',
+      defval: '0xffffffff',
+      name: 'Diffuse concrete',
+      type: 'Color',
+      visualization: 'swatch',
+      group: [Object],
+      order: 1025,
+      hidden: false
+    },
+    'c217ffeb-ef72-49ce-b189-e647b9a9f9dd': {
+      id: 'c217ffeb-ef72-49ce-b189-e647b9a9f9dd',
+      defval: '0x000000ff',
+      name: 'Dimensioning',
+      type: 'Color',
+      visualization: 'swatch',
+      order: 1553,
+      hidden: false
+    },
+    'ca5f340f-0364-428f-a07f-a35c05a5b450': {
+      id: 'ca5f340f-0364-428f-a07f-a35c05a5b450',
+      defval: 'true',
+      name: 'Dimensioning',
+      type: 'Bool',
+      visualization: 'toggle',
+      order: 1713,
+      hidden: false
+    }
+  },
+  outputs: {
+    c6868b74af5e322e08c9b0bd6e8ea3a2: {
+      id: 'c6868b74af5e322e08c9b0bd6e8ea3a2',
+      uid: 'cb1ba10d-0774-4f9a-a0c2-4b1a1f558da1',
+      name: 'bookshelf',
+      material: '13016beacfa16b94c963450272ac421c',
+      dependency: [Array],
+      hidden: false
+    },
+    '13016beacfa16b94c963450272ac421c': {
+      id: '13016beacfa16b94c963450272ac421c',
+      uid: 'cb1ba10d-0774-4f9a-a0c2-4b1a1f558da1',
+      name: 'bookshelf',
+      dependency: [Array],
+      hidden: false
+    },
+    '775744b372f7e9dc1b5dc7cf558cd3fc': {
+      id: '775744b372f7e9dc1b5dc7cf558cd3fc',
+      uid: '47d91cf7-e1dc-4270-bd24-d2c72c52de25',
+      name: 'concrete wall',
+      material: '3e55ca0332915cac495e8ddba26d7b17',
+      dependency: [Array],
+      hidden: false
+    },
+    '3e55ca0332915cac495e8ddba26d7b17': {
+      id: '3e55ca0332915cac495e8ddba26d7b17',
+      uid: '47d91cf7-e1dc-4270-bd24-d2c72c52de25',
+      name: 'concrete wall',
+      dependency: [Array],
+      hidden: false
+    },
+    f643417d03c140a8ad1019f47ed32ffc: {
+      id: 'f643417d03c140a8ad1019f47ed32ffc',
+      uid: 'ca96f982-1c25-420d-8021-eb86047cf12d',
+      name: 'Tag',
+      dependency: [Array],
+      hidden: false
+    },
+    '715192b0c285cd81d1e4149fc5933e94': {
+      id: '715192b0c285cd81d1e4149fc5933e94',
+      uid: '3e24d242-4bb2-4b27-9dc2-2a2e99f438cb',
+      name: 'Dimensioning',
+      material: 'dba66e36236dbc6614c333182bb71076',
+      dependency: [Array],
+      hidden: false
+    },
+    dba66e36236dbc6614c333182bb71076: {
+      id: 'dba66e36236dbc6614c333182bb71076',
+      uid: '3e24d242-4bb2-4b27-9dc2-2a2e99f438cb',
+      name: 'Dimensioning',
+      dependency: [Array],
+      hidden: false
+    }
+  },
+  exports: {
+    '6f95a6daca7722d288113914730fadee': {
+      id: '6f95a6daca7722d288113914730fadee',
+      uid: '22e0519f95a4b214a66db85491cd8760',
+      name: 'Download 3D',
+      type: 'download',
+      dependency: [Array],
+      order: 45,
+      hidden: false
+    },
+    ea402cb0ba25dc161e066e4d3f3a12fd: {
+      id: 'ea402cb0ba25dc161e066e4d3f3a12fd',
+      uid: 'e9493363b53d2cdbf9814d5b3c406933',
+      name: 'Download Parts',
+      type: 'download',
+      dependency: [Array],
+      order: -95,
+      hidden: false
+    }
+  }
+}
+Congratulations, your model was confirmed!
+Updating platform model status...
+Publishing confirmed model...
+{
+  status: 'done',
+  created_at: 1665151064,
+  updated_at: 1665151080,
+  link_sharing_slug: null,
+  require_token: false,
+  backend_properties: null,
+  backend_ticket: null,
+  author_ticket: null,
+  accessdomains: [],
+  global_accessdomains: [],
+  use_global_accessdomains: false,
+  backend_access: true,
+  backend_system: null,
+  user: null,
+  tags: [],
+  decoration: [],
+  ticket: null,
+  visibility: 'private',
+  visibility_nominal: 'private',
+  guid: '7e6158a6-df50-42ff-8484-069267d07b74',
+  featured: false,
+  bookmark: null,
+  organization: null,
+  id: '9771d1c4-7fc4-410d-a0b7-3e04af5f7ce5',
+  title: 'ARRS_texturized',
+  slug: 'arrs-texturized-82',
+  description: '',
+  thumbnail_url: 'https://sduse1-assets.shapediver.com/images/model/7e6158a6-df50-42ff-8484-069267d07b74_thumb.png?v=1665151080'
 }
 ```
 

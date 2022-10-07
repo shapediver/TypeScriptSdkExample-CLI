@@ -1,6 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
-import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform } from "./src/ShapeDiver/Utils"
+import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform, publishModel } from "./src/ShapeDiver/Utils"
 
 const yargs = require("yargs")
 
@@ -105,7 +105,7 @@ yargs(process.argv.slice(2))
     )
     .command(
         "upload-model",
-        "Get geometry backend information of a model",
+        "Create and upload model, wait for its confirmation, publish it (private visibility)",
         (yargs) => {
             yargs
                 .options({
@@ -130,24 +130,45 @@ yargs(process.argv.slice(2))
         },
     )
     .command(
+        "publish-model",
+        "Publish a model whose checking process resulted in status \"pending\".",
+        (yargs) => {
+            yargs
+                .options({
+                    i: {
+                        alias: "id",
+                        description: "Model identifier (slug, id, guid)",
+                        type: "string",
+                        demandOption: true,
+                    },
+                })
+        },
+        async (argv) => {
+            await publishModel(
+                argv.i as string,
+            );
+        },
+    )
+    .command(
         "*",
         "",
         () => {
             console.log('');
             console.log('Examples:');
             console.log('');
-            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER"        - get embedding access data for model (IDENTIFIER = slug, id, guid)');
-            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER -b"     - get backend access data for model ');
-            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER -b -e"  - get backend access data for model, allowing exports');
+            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER"       - Get embedding access data for model (IDENTIFIER = slug, id, guid)');
+            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER -b"    - Get backend access data for model ');
+            console.log('"shapediver-cli.ts model-access-data -i IDENTIFIER -b -e" - Get backend access data for model, allowing exports');
             console.log('');
-            console.log('"shapediver-cli.ts list-latest-models"                   - list 10 latest models owned by the user');
-            console.log('"shapediver-cli.ts list-latest-models --own false"       - list 10 latest models which the user has access to');
-            console.log('"shapediver-cli.ts list-latest-models --limit 3"         - list 3 latest models howned by the user');
+            console.log('"shapediver-cli.ts list-latest-models"                    - List 10 latest models owned by the user');
+            console.log('"shapediver-cli.ts list-latest-models --own false"        - List 10 latest models which the user has access to');
+            console.log('"shapediver-cli.ts list-latest-models --limit 3"          - List 3 latest models howned by the user');
             console.log('');
-            console.log('"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - get platform backend information of a model (user, basic properties, domains, tags, decoration)');
-            console.log('"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - get geometry backend information of a model (parameters, outputs, exports)');
+            console.log('"shapediver-cli.ts model-info-platform -i IDENTIFIER"     - Get platform backend information of a model (user, basic properties, domains, tags, decoration)');
+            console.log('"shapediver-cli.ts model-info-geometry -i IDENTIFIER"     - Get geometry backend information of a model (parameters, outputs, exports)');
             console.log('');
-            console.log('"upload-model -f "FILENAME" -t "TITLE"                    - create and upload model, wait for its confirmation, publish it (private visibility)');
+            console.log('"shapediver-cli.ts upload-model -f FILENAME -t TITLE"     - Create and upload model, wait for checking process, publish model (private visibility)');
+            console.log('"shapediver-cli.ts publish-model -i IDENTIFIER"           - Publish a model whose checking process resulted in status "pending"');
             console.log('');
         }
     )
