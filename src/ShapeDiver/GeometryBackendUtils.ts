@@ -101,7 +101,7 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
 
     dto = await sdk.model.get(dto.model.id);
 
-    if (!['not_uploaded', 'uploaded'].includes(dto.model.stat)) {
+    if (!['not_uploaded', 'uploaded', 'pending'].includes(dto.model.stat)) {
         // no need to wait
         return {
             sdk,
@@ -109,7 +109,11 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
         };
     }
     
+    let epochStart = Date.now();
     while (dto.model.stat === 'not_uploaded' ) {
+        if (Date.now() - epochStart > 60000) {
+            throw new Error('Model checking did not start within 60 seconds.');
+        }
         console.log('Waiting for model check to start...');
         await sleep(2500);
         dto = await sdk.model.get(dto.model.id);
@@ -118,9 +122,9 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
     const max_comp_time = dto.setting.compute.max_comp_time;
     console.log(`Maximum allowed computation time: ${max_comp_time}`);
 
-    const epochStart = Date.now();
+    epochStart = Date.now();
     while ( !['confirmed', 'denied', 'pending'].includes(dto.model.stat) ) {
-        if (epochStart - Date.now() > 2000 * max_comp_time) {
+        if (Date.now() - epochStart > 2 * max_comp_time) {
             console.warn(`Model check did not complete within ${max_comp_time / 500} seconds.`);
             return {
                 sdk,
