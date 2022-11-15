@@ -1,9 +1,9 @@
 import { initSession, ISessionData, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
-import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, IPlatformBackendModelData, listLatestModels, patchModelStatus, queryUserCreditUsage } from "./PlatformBackendUtils";
+import { createModel, getModelAccessData, getModelInfo, initPlatformSdk, IPlatformBackendModelData, listLatestModels, notifyUsers, NotifyUsersNotificationOptions, NotifyUsersUserOptions, patchModelStatus, queryUserCreditUsage } from "./PlatformBackendUtils";
 import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -134,4 +134,18 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
     const data = await queryUserCreditUsage(sdk, user_id, from, to, SdPlatformResponseAnalyticsTimestampType.Day);
 
     console.table(data);
+}
+
+export const notifyUsersPlatform = async(options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions) => {
+    const sdk = await initPlatformSdk();
+    const data = await notifyUsers(sdk, options, notification_options);
+
+    console.table(data.data.result.map((x: SdPlatformResponseUserAdmin) => 
+        {
+            return {
+            username : x.username,
+            slug : x.slug,
+            email: x.email,
+            }
+        }));
 }
