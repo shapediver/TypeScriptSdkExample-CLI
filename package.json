@@ -7,6 +7,8 @@
   "dependencies": {
     "@shapediver/sdk.geometry-api-sdk-v2": "^1.1.0",
     "@shapediver/sdk.platform-api-sdk-v1": "^2.12.7",
+    "@shapediver/sdk.sdtf-rhino3dm": "^1.1.1",
+    "@shapediver/sdk.sdtf-v1": "^1.1.1",
     "yargs": "^17.6.0"
   },
   "devDependencies": {
