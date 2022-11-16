@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 import { makeExampleSdtf, parseSdtf } from "./SdtfUtils";
+import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -138,8 +139,50 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
 }
 
 export const sdTFExample = async (identifier: string) : Promise<void> => {
-    const buffer = await makeExampleSdtf();
+
+    // get access to the model
+    const sdk = await initPlatformSdk();
+    const data = await getModelAccessData(sdk, identifier, true, true);
+    const context = await initSession(data.access_data);
+
+    // find matching parameters
+    const chunkTypes: Array<'String'|'Curve'|'Point'> = ['String', 'Point'];
+    chunkTypes.forEach(chunkType => {
+        const param = Object.values(context.dto.parameters).find(p => p.type === `s${chunkType}`);
+        if (!param) {
+            console.warn(`Could not find a matching parameter for chunk type ${chunkType}`);
+        }
+    });
+
+    // create example sdtf
+    const buffer = await makeExampleSdtf(chunkTypes);
     await fsp.writeFile(`${identifier}.sdtf`, new DataView(buffer));
+
+    // create request dto
+    const requestDto: {[id: string]: IParameterValue} = {};
+    chunkTypes.forEach(chunkType => {
+        const param = Object.values(context.dto.parameters).find(p => p.type === `s${chunkType}`);
+        if (param) {
+            requestDto[param.id] = {
+                sdtf: { arrayBuffer: buffer /*, chunkName: chunkType*/ }
+            };
+        }
+    });
+
+    const result = await runCustomizationUsingSdtf(context, requestDto);
+
+    console.log(`Requested parameter values: ${JSON.stringify(result.requestBody, null, 2)}`);
+
+    for (const outputId in result.outputs) {
+        const output = result.outputs[outputId];
+        if (!output.content) continue;
+        for (const item of output.content) {
+            if (item.contentType === 'model/vnd.sdtf') {
+                console.log(`Found sdTF asset for output ${output.name}, ${output.id}`);
+                parseSdtf(item.href);
+            }
+        }
+    }
 
 }
 

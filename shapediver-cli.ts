@@ -206,6 +206,7 @@ yargs(process.argv.slice(2))
                         alias: "id",
                         description: "Model identifier (slug, id, guid)",
                         type: "string",
+                        demandOption: true,
                     },
                 })
         },
@@ -225,6 +226,7 @@ yargs(process.argv.slice(2))
                         alias: "filename",
                         description: "Path to the sdTF file to be parsed",
                         type: "string",
+                        demandOption: true,
                     },
                 })
         },
