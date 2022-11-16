@@ -1,6 +1,16 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
-import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform, displayUserCreditUsage, publishModel } from "./src/ShapeDiver/Utils"
+import { 
+    createAndUploadModel, 
+    displayLatestModels, 
+    displayModelAccessData, 
+    displayModelInfoGeometry, 
+    displayModelInfoPlatform, 
+    displayUserCreditUsage, 
+    publishModel, 
+    sdTFExample, 
+    sdTFParse
+} from "./src/ShapeDiver/Utils"
 
 const yargs = require("yargs")
 
@@ -183,6 +193,44 @@ yargs(process.argv.slice(2))
                 argv.d ? argv.d as number : 31,
                 argv.f as string,
                 argv.t as string,
+            );
+        },
+    )
+    .command(
+        "sdtf-example",
+        "Example for running computations of models which have sdTF inputs and outputs.",
+        (yargs) => {
+            yargs
+                .options({
+                    i: {
+                        alias: "id",
+                        description: "Model identifier (slug, id, guid)",
+                        type: "string",
+                    },
+                })
+        },
+        async (argv) => {
+            await sdTFExample(
+                argv.i as string,
+            );
+        },
+    )
+    .command(
+        "parse-sdtf",
+        "Example for parsing an sdTF file, prints some information about the contents.",
+        (yargs) => {
+            yargs
+                .options({
+                    f: {
+                        alias: "filename",
+                        description: "Path to the sdTF file to be parsed",
+                        type: "string",
+                    },
+                })
+        },
+        async (argv) => {
+            await sdTFParse(
+                argv.f as string,
             );
         },
     )

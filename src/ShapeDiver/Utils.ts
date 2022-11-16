@@ -4,6 +4,7 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { makeExampleSdtf, parseSdtf } from "./SdtfUtils";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -134,4 +135,21 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
     const data = await queryUserCreditUsage(sdk, user_id, from, to, SdPlatformResponseAnalyticsTimestampType.Day);
 
     console.table(data);
+}
+
+export const sdTFExample = async (identifier: string) : Promise<void> => {
+    const buffer = await makeExampleSdtf();
+    await fsp.writeFile(`${identifier}.sdtf`, new DataView(buffer));
+
+}
+
+export const sdTFParse = async (filename: string) : Promise<void> => {
+    try {
+        await fsp.access(filename, fs.constants.R_OK);
+    } catch {
+        throw new Error(`File ${filename} can not be read`)
+    }
+
+    const buffer = await fsp.readFile(filename);
+    await parseSdtf(buffer.buffer);
 }
