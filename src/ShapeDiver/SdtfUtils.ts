@@ -122,13 +122,15 @@ export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
  * Parses and sdTF asset and prints basic information about the asset's contents.
  * @param buffer 
  */
-export const parseSdtf = async (buffer: ArrayBuffer) : Promise<void> => {
+export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> => {
     // create an instance of the sdTF SDK, also using the Rhino3dm integration
     const sdk = await createSdtfSdk({
         integrations: [ new SdtfRhino3dmTypeIntegration() ]
     });
     const parser = await sdk.createParser();
-    const asset = parser.readFromBuffer(buffer);
+    const asset = ((buffer as string).padStart) 
+        ? await parser.readFromFile(buffer as string) 
+        :  parser.readFromBuffer(buffer as ArrayBuffer);
 
     console.log(`The sdTF asset contains ${asset.chunks.length} chunks.`);
 

@@ -150,6 +150,5 @@ export const sdTFParse = async (filename: string) : Promise<void> => {
         throw new Error(`File ${filename} can not be read`)
     }
 
-    const buffer = await fsp.readFile(filename);
-    await parseSdtf(buffer.buffer);
+    await parseSdtf(filename);
 }
