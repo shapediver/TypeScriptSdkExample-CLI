@@ -14,7 +14,6 @@ import
   SdPlatformModelVisibility,
   SdPlatformRequestModelStatus,
   SdPlatformResponseAnalyticsTimestampType,
-  SdPlatformQueryResponse,
   SdPlatformResponseUserMinimal,
   SdPlatformNotificationCreator,
   SdPlatformNotificationLevel,
@@ -341,7 +340,7 @@ export interface NotifyUsersNotificationOptions
 }
 
 
-export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions): Promise<SdPlatformQueryResponse<SdPlatformResponseUserMinimal>> => 
+export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions): Promise<Array<SdPlatformResponseUserMinimal>> => 
 {
   const uo = notify_users_user_options;
 
@@ -383,26 +382,30 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
     filter["organization_role"] = uo.organization_roles;
   }
 
-  console.log(filter);
+  let users = [];
 
-  try
+  let offset = null;
+  do
   {
-    var users = await sdk.users.query({
-      filters: filter,
-      limit: 100,
-      strict_limit: true
-    });
-  } catch (ex)
-  {
-    console.log(ex);
-    throw ex;
-  }
+      const users_res = await sdk.users.query({
+        filters: filter,
+        limit: 25,
+        strict_limit: true,
+        offset: offset
+      });
+
+      offset = users_res.data.pagination.next_offset;
+      users = users.concat(users_res.data.result);
+
+      console.dir(users_res.data.pagination);
+
+  } while (offset != null);
 
 
   // if not dry run, create notifications. 
   if (uo.dry_run !== true)
   {
-    for (let user of users.data.result)
+    for (let user of users)
     {
       try
       {

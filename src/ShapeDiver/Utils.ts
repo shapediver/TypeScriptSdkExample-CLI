@@ -5,7 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 
-export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
+export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean): Promise<void> =>
+{
 
     const sdk = await initPlatformSdk();
     const data = await getModelAccessData(sdk, identifier, allowExports, backend);
@@ -13,7 +14,8 @@ export const displayModelAccessData = async (identifier: string, allowExports: b
     console.log(data.access_data);
 };
 
-export const displayLatestModels = async (limit: number, own: boolean) : Promise<void> => {
+export const displayLatestModels = async (limit: number, own: boolean): Promise<void> =>
+{
 
     const sdk = await initPlatformSdk();
     const models = await listLatestModels(sdk, limit, own);
@@ -21,7 +23,8 @@ export const displayLatestModels = async (limit: number, own: boolean) : Promise
     console.log(models);
 }
 
-export const displayModelInfoPlatform = async (identifier: string) : Promise<void> => {
+export const displayModelInfoPlatform = async (identifier: string): Promise<void> =>
+{
 
     const sdk = await initPlatformSdk();
     const result = await getModelInfo(sdk, identifier);
@@ -29,7 +32,8 @@ export const displayModelInfoPlatform = async (identifier: string) : Promise<voi
     console.log(result);
 }
 
-export const displayModelInfoGeometry = async (identifier: string) : Promise<void> => {
+export const displayModelInfoGeometry = async (identifier: string): Promise<void> =>
+{
 
     const sdk = await initPlatformSdk();
     const data = await getModelAccessData(sdk, identifier, true, true);
@@ -38,9 +42,11 @@ export const displayModelInfoGeometry = async (identifier: string) : Promise<voi
     console.log(result.dto);
 }
 
-export const createAndUploadModel = async (filename: string, title?: string) : Promise<void> => {
+export const createAndUploadModel = async (filename: string, title?: string): Promise<void> =>
+{
 
-    try {
+    try
+    {
         await fsp.access(filename, fs.constants.R_OK);
     } catch {
         throw new Error(`File ${filename} can not be read`)
@@ -63,34 +69,41 @@ export const createAndUploadModel = async (filename: string, title?: string) : P
     await publishModel_(sdk, platform_data, geometry_data);
 }
 
-const publishModel_ = async (sdk: SdPlatformSdk, platform_data: IPlatformBackendModelData, geometry_data: ISessionData) : Promise<void> => {
+const publishModel_ = async (sdk: SdPlatformSdk, platform_data: IPlatformBackendModelData, geometry_data: ISessionData): Promise<void> =>
+{
 
-    if (geometry_data.dto.model.stat === 'pending') {
+    if (geometry_data.dto.model.stat === 'pending')
+    {
         console.log('Model checking is pending, you will be notified once it completes.');
-    } 
-    else if (geometry_data.dto.model.stat === 'denied') {
+    }
+    else if (geometry_data.dto.model.stat === 'denied')
+    {
         console.error(`Model was denied: ${geometry_data.dto.model.msg}`);
-    } 
-    else if (geometry_data.dto.model.stat === 'confirmed') {
+    }
+    else if (geometry_data.dto.model.stat === 'confirmed')
+    {
         console.log('Congratulations, your model was confirmed!');
     }
- 
+
     console.log('Updating platform model status...');
     let model = await patchModelStatus(sdk, platform_data.model.id);
-    if (model.status === SdPlatformModelStatus.Confirmed) {
+    if (model.status === SdPlatformModelStatus.Confirmed)
+    {
         console.log('Publishing confirmed model...');
         model = await patchModelStatus(sdk, platform_data.model.id, SdPlatformRequestModelStatus.Done);
     }
-   
+
     console.log(model);
 }
 
-export const publishModel = async (identifier: string) : Promise<void> => {
+export const publishModel = async (identifier: string): Promise<void> =>
+{
 
     const sdk = await initPlatformSdk();
     const platform_data = await getModelAccessData(sdk, identifier, true, true);
 
-    if (platform_data.model.status === SdPlatformModelStatus.Done) {
+    if (platform_data.model.status === SdPlatformModelStatus.Done)
+    {
         console.log('Your model has already been published!');
         return;
     }
@@ -103,11 +116,13 @@ export const publishModel = async (identifier: string) : Promise<void> => {
     await publishModel_(sdk, platform_data, geometry_data);
 }
 
-const dayTimestampToEpoch = (ts: string) : number => {
-    if (ts.length != 8) 
+const dayTimestampToEpoch = (ts: string): number =>
+{
+    if (ts.length != 8)
         throw new Error('Provide a timestamp in format YYYYMMDD, e.g. 20220815');
     let num = 0;
-    try {
+    try
+    {
         const y = Number(ts.substring(0, 4));
         const m = Number(ts.substring(4, 6)) - 1;
         const d = Number(ts.substring(6, 8));
@@ -118,34 +133,36 @@ const dayTimestampToEpoch = (ts: string) : number => {
     return num;
 }
 
-export const displayUserCreditUsage = async (identifier: string, days: number, from_s: string, to_s: string) : Promise<void> => {
-
+export const displayUserCreditUsage = async (identifier: string, days: number, from_s: string, to_s: string): Promise<void> =>
+{
     const sdk = await initPlatformSdk();
 
     const user_id = identifier ? identifier : sdk.authorization.authData.userId;
 
-    if (from_s && !to_s || !from_s && to_s) {
+    if (from_s && !to_s || !from_s && to_s)
+    {
         throw new Error('Specify "--days", or "--from" and "--to" timestamps.');
     }
 
     const to = to_s ? dayTimestampToEpoch(to_s) : Math.round(Date.now() / 1000);
     const from = from_s ? dayTimestampToEpoch(from_s) : to - (days + 1) * 86400;
-  
+
     const data = await queryUserCreditUsage(sdk, user_id, from, to, SdPlatformResponseAnalyticsTimestampType.Day);
 
     console.table(data);
 }
 
-export const notifyUsersPlatform = async(options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions) => {
+export const notifyUsersPlatform = async (options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions) =>
+{
     const sdk = await initPlatformSdk();
     const data = await notifyUsers(sdk, options, notification_options);
 
-    console.table(data.data.result.map((x: SdPlatformResponseUserAdmin) => 
-        {
-            return {
-            username : x.username,
-            slug : x.slug,
+    console.table(data.map((x: SdPlatformResponseUserAdmin) => 
+    {
+        return {
+            username: x.username,
+            slug: x.slug,
             email: x.email,
-            }
-        }));
+        }
+    }));
 }

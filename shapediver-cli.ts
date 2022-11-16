@@ -195,7 +195,7 @@ yargs(process.argv.slice(2))
             yargs
                 .options({
                     p: {
-                        alias: "plan name",
+                        alias: "plan-name",
                         description: "Name of subscribed chargebee plan.",
                         type: "string",
                         demandOption: true 
@@ -206,34 +206,34 @@ yargs(process.argv.slice(2))
                         type: "string"
                     }, 
                     o: {
-                        alias: "has organization",
+                        alias: "has-organization",
                         description: `If users should be in organization. Can be one of 'y', 'n' or empty. If 'y' user must be in organization.
                          If 'n' filters users without organization. Empty does nothing.`,
                         type: "string"
                     },
                     r: {
-                        alias: "organization role",
+                        alias: "organization-role",
                         description: `The organization role. Checks for user in organization role or in roles. If array, concat with ','.  example: owner, user `,
                         type: "string"
                     },
                     d: {
-                        alias: "dry run",
+                        alias: "dry-run",
                         description: "If dry run, notifactions are not sent. Just returns and prints list of users which are fetched. Use 'y' for dry run.",
                         type: "boolean"
                     },
                     h: {
-                        alias: "notification href",
+                        alias: "notification-href",
                         description: "Link for notification. Can be used to link release notes etc...",
                         type: "string"
                     },
                     t: {
-                        alias: "notification type",
+                        alias: "notification-type",
                         description: "The notification type.",
                         type: "string",
                         demandOption: true,
                     },
                     n: {
-                        alias: "notification description",
+                        alias: "notification-description",
                         description: "The description of a notification",
                         type: "string",
                         demandOption: true 
