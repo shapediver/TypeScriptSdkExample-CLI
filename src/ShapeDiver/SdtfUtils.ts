@@ -3,22 +3,22 @@ import {
     SdtfRhino3dmTypeIntegration 
 } from "@shapediver/sdk.sdtf-rhino3dm";
 import { 
-    create as createSdtfSdk, SdtfRhinoTypeHintName 
+    create as createSdtfSdk, ISdtfReadableAsset, SdtfRhinoTypeHintName 
 } from "@shapediver/sdk.sdtf-v1";
 import { RhinoModule } from "rhino3dm";
 
 /**
  * Create a sample sdTF which contains two chunks of data.
- * A chunk called "Text" which contains a tree of strings (two branches). 
+ * A chunk called "String" which contains a tree of strings (two branches). 
  * A chunk called "Curve" which contains a list of curves. 
  * A chunk called "Point" which contains a list of points. 
  * @returns 
  */
-export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
+export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'>) : Promise<ArrayBuffer> => {
     
     // create an instance of the sdTF SDK, also using the Rhino3dm integration
     const sdk = await createSdtfSdk({
-        integrations: [ new SdtfRhino3dmTypeIntegration() ]
+        integrations: [ new SdtfRhino3dmTypeIntegration({enableCompression: false}) ]
     });
     const constructor = sdk.createConstructor();
     const factory = constructor.getFactory();
@@ -26,9 +26,9 @@ export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
  
     const rhino: RhinoModule = await require("rhino3dm")();
 
-    {
+    if (chunkTypes.includes('String')) {
         //// Step 1
-        //// Create a chunk which represents a Grasshopper tree of strings ("Text" in terms of Grasshopper).
+        //// Create a chunk which represents a Grasshopper tree of strings ("String" in terms of Grasshopper).
 
         const typeHintForStrings = "string";
         // Create two branches that hold the data - all of the same type.
@@ -52,13 +52,13 @@ export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
             [ 0, 1 ],
         ];
         
-        // Add a chunk called "Text" to the sdTF asset builder.
-        // We name it "Text" because this is the default name of Grasshopper text paramater components. 
+        // Add a chunk called "String" to the sdTF asset builder.
+        // We name it "String" because this is the default name of Grasshopper text paramater components. 
         // You could choose any name you like. 
-        builder.addChunkForTreeData("Text", { branches: branches, paths: paths });
+        builder.addChunkForTreeData("String", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Text']}));
     }
     
-    {
+    if (chunkTypes.includes('Curve')) {
         //// Step 2
         //// Create a chunk which represents a Grasshopper tree of polylines.
     
@@ -85,10 +85,10 @@ export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
         const paths = [
             [ 0 ]
         ];
-        builder.addChunkForTreeData("Curve", { branches: branches, paths: paths });
+        builder.addChunkForTreeData("Curve", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Crv']}));
     }
 
-    {
+    if (chunkTypes.includes('Point')) {
         //// Step 3
         //// Create a chunk which represents a Grasshopper tree of points.
     
@@ -104,7 +104,7 @@ export const makeExampleSdtf = async () : Promise<ArrayBuffer> => {
         const paths = [
             [ 0 ]
         ];
-        builder.addChunkForTreeData("Point", { branches: branches, paths: paths });
+        builder.addChunkForTreeData("Point", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Pt']}));
     }
 
     //// Final step
@@ -128,10 +128,17 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
         integrations: [ new SdtfRhino3dmTypeIntegration() ]
     });
     const parser = await sdk.createParser();
-    const asset = ((buffer as string).padStart) 
-        ? await parser.readFromFile(buffer as string) 
-        :  parser.readFromBuffer(buffer as ArrayBuffer);
-
+    let asset: ISdtfReadableAsset;
+    if ((buffer as string).padStart) {
+        const str: string = buffer as string;
+        if (str.startsWith('http'))
+            asset = await parser.readFromUrl(str);
+        else 
+            asset = await parser.readFromFile(buffer as string) 
+    } else {
+        asset = parser.readFromBuffer(buffer as ArrayBuffer);
+    }
+  
     console.log(`The sdTF asset contains ${asset.chunks.length} chunks.`);
 
     for (const chunk of asset.chunks) {
