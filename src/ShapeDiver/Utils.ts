@@ -146,7 +146,7 @@ export const sdTFExample = async (identifier: string) : Promise<void> => {
     const context = await initSession(data.access_data);
 
     // find matching parameters
-    const chunkTypes: Array<'String'|'Curve'|'Point'> = ['String', 'Point'];
+    const chunkTypes: Array<'String'|'Curve'|'Point'> = ['String'];
     chunkTypes.forEach(chunkType => {
         const param = Object.values(context.dto.parameters).find(p => p.type === `s${chunkType}`);
         if (!param) {
@@ -171,14 +171,12 @@ export const sdTFExample = async (identifier: string) : Promise<void> => {
 
     const result = await runCustomizationUsingSdtf(context, requestDto);
 
-    console.log(`Requested parameter values: ${JSON.stringify(result.requestBody, null, 2)}`);
-
     for (const outputId in result.outputs) {
         const output = result.outputs[outputId];
         if (!output.content) continue;
         for (const item of output.content) {
             if (item.contentType === 'model/vnd.sdtf') {
-                console.log(`Found sdTF asset for output ${output.name}, ${output.id}`);
+                console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
                 parseSdtf(item.href);
             }
         }

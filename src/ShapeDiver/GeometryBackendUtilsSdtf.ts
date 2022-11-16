@@ -155,7 +155,7 @@ export const runCustomizationUsingSdtf = async (session: ISessionData, parameter
             requestBodyStrings[paramId] = JSON.stringify(stypeValue);
         }
     });
-    console.log(requestBody);
+    console.log('Customization request body', requestBody);
 
     const result = await sdk.utils.submitAndWaitForCustomization(sdk, dto.sessionId, requestBodyStrings, maxWaitMsec);
 

@@ -8,10 +8,11 @@ import {
 import { RhinoModule } from "rhino3dm";
 
 /**
- * Create a sample sdTF which contains two chunks of data.
+ * Create a sample sdTF which contains some chunks of data.
  * A chunk called "String" which contains a tree of strings (two branches). 
- * A chunk called "Curve" which contains a list of curves. 
- * A chunk called "Point" which contains a list of points. 
+ * A chunk called "Curve" which contains a list of curves (one branch). 
+ * A chunk called "Point" which contains a list of points (one branch). 
+ * @param chunkTypes 
  * @returns 
  */
 export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'>) : Promise<ArrayBuffer> => {
@@ -143,13 +144,13 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
 
     for (const chunk of asset.chunks) {
 
-        console.log(`  Chunk name ${chunk.name}, typeHint ${chunk.typeHint.name}:`);
+        console.log(`  Chunk name "${chunk.name}", typeHint "${chunk.typeHint ? chunk.typeHint.name : 'unknown'}":`);
 
         if (Object.keys(chunk.attributes.entries).length > 0) {
             console.log(`    Attributes:`);
             for (const key in chunk.attributes.entries) {
                 const value = await chunk.attributes.entries[key].getContent();
-                console.log(`      ${key} => ${value}`);
+                console.log(`      "${key}" => "${value}"`);
             }
         }
 
@@ -164,3 +165,25 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
     }
 }
 
+export const SdtfTypeHintToParameterTypeMap = {
+    'boolean': ['sBool'],
+    'color': ['sColor'],
+    'double': ['sNumber'],
+    'int32': ['sInteger'],
+    'geometry.box': ['sBox'],
+    'geometry.circle': ['sCircle'],
+    'geometry.interval': ['sDomain'],
+    'geometry.interval2': ['sDomain2D'],
+    'geometry.line': ['sLine'],
+    'geometry.plane': ['sPlane'],
+    'geometry.point3d': ['sPoint'],
+    'geometry.rectangle': ['sRectangle'],
+    'geometry.vector3d': ['sVector'],
+    'image': [],
+    'rhino.brep': ['sBrep'],
+    'rhino.curve': ['sCurve'],
+    'rhino.mesh': ['sMesh'],
+    'rhino.subd': ['sSubdiv'],
+    'rhino.surface': ['sSurface'],
+    'string': ['sString'],
+}
