@@ -1,11 +1,11 @@
 import { 
+    SdtfRhino3dmSingleton,
     //SdtfRhino3dmTypeGuard, 
     SdtfRhino3dmTypeIntegration 
 } from "@shapediver/sdk.sdtf-rhino3dm";
 import { 
     create as createSdtfSdk, ISdtfReadableAsset, SdtfRhinoTypeHintName 
 } from "@shapediver/sdk.sdtf-v1";
-import { RhinoModule } from "rhino3dm";
 
 /**
  * Create a sample sdTF which contains some chunks of data.
@@ -25,7 +25,8 @@ export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'
     const factory = constructor.getFactory();
     const builder = constructor.getWriter().createGrasshopperSdtfBuilder();
  
-    const rhino: RhinoModule = await require("rhino3dm")();
+    // it is important to use the same instance of rhino3dm which is used by the 3dm integration
+    const rhino = SdtfRhino3dmSingleton.getInstance();
 
     if (chunkTypes.includes('String')) {
         //// Step 1
@@ -165,6 +166,9 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
     }
 }
 
+/**
+ * Map from sdTF typeHint to paramater type
+ */
 export const SdtfTypeHintToParameterTypeMap = {
     'boolean': ['sBool'],
     'color': ['sColor'],
@@ -179,7 +183,7 @@ export const SdtfTypeHintToParameterTypeMap = {
     'geometry.point3d': ['sPoint'],
     'geometry.rectangle': ['sRectangle'],
     'geometry.vector3d': ['sVector'],
-    'image': [],
+    'image': ['sBitmap'],
     'rhino.brep': ['sBrep'],
     'rhino.curve': ['sCurve'],
     'rhino.mesh': ['sMesh'],
