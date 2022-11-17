@@ -4,9 +4,9 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
-import { makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf } from "./SdtfUtils";
+import { makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
-import { SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
+import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -139,49 +139,86 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
     console.table(data);
 }
 
-export const sdTFExample = async (identifier: string) : Promise<void> => {
+export const sdTFExample = async (identifier: string, sdTFfilename?: string) : Promise<void> => {
 
     // get access to the model
     const sdk = await initPlatformSdk();
     const data = await getModelAccessData(sdk, identifier, true, true);
     const context = await initSession(data.access_data);
 
-    // find matching parameters
-    const chunkTypes: Array<SdtfTypeHintName> = [SdtfTypeHintName.RHINO_CURVE];
-    chunkTypes.forEach(chunkType => {
-        const param = Object.values(context.dto.parameters).find(p => p.type === mapSdtfTypeHintToParameterType(chunkType));
-        if (!param) {
-            console.warn(`Could not find a matching parameter for chunk type ${chunkType}`);
+    // get input sdTF from command line, otherwise use auto-generated example
+    let sdTFbuffer: ArrayBuffer;
+    let sdTFasset: ISdtfReadableAsset;
+    if (sdTFfilename) {
+        try {
+            await fsp.access(sdTFfilename, fs.constants.R_OK);
+        } catch {
+            throw new Error(`File ${sdTFfilename} can not be read`)
         }
-    });
+        sdTFasset = await readSdtf(sdTFfilename);
+        sdTFbuffer = await (await fsp.readFile(sdTFfilename)).buffer;
+    }
+    else {
+        console.log('No input sdTF file was provided, using an example.')
+        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.RHINO_CURVE]);
+        sdTFasset = await readSdtf(sdTFbuffer);
+        //await fsp.writeFile(`${identifier}.sdtf`, new DataView(sdTFbuffer));
+    }
 
-    // create example sdtf
-    const buffer = await makeExampleSdtf(chunkTypes);
-    await fsp.writeFile(`${identifier}.sdtf`, new DataView(buffer));
-
-    // create request dto
+    // print information about input sdTF
+    console.log('Input sdTF:');
+    await printSdtfInfo(sdTFasset);
+    
+    // find matching parameters for chunks, and create request dto
     const requestDto: {[id: string]: IParameterValue} = {};
-    chunkTypes.forEach(chunkType => {
-        const param = Object.values(context.dto.parameters).find(p => p.type === mapSdtfTypeHintToParameterType(chunkType));
-        if (param) {
-            requestDto[param.id] = {
-                sdtf: { arrayBuffer: buffer /*, chunkName: chunkType*/ }
-            };
+    sdTFasset.chunks.forEach(chunk => {
+        if (!chunk.name) return;
+        if (!chunk.typeHint.name) {
+            console.warn(`Skipping chunk ${chunk.name} which does not have a typeHint.`);
+            return;
         }
+        const typeHint = chunk.typeHint.name;
+        const parameterType = mapSdtfTypeHintToParameterType(typeHint as SdtfTypeHintName);
+        if (!parameterType) {
+            console.warn(`Skipping chunk ${chunk.name} with typeHint ${typeHint} for which no matching parameter type was found.`);
+            return;
+        }
+        const params = Object.values(context.dto.parameters).filter(p => p.type === parameterType);
+        if (params.length === 0) {
+            console.warn(`Could not find a matching parameter for chunk ${chunk.name} with typeHint ${typeHint}.`);
+            return;
+        }
+        else if (params.length > 1) {
+            console.warn(`Found multiple matching parameters for chunk ${chunk.name} with typeHint ${typeHint}, picking the first one.`);
+        }
+        const param = params[0];
+        requestDto[param.id] = {
+            sdtf: { arrayBuffer: sdTFbuffer /*, chunkName: chunkType*/ }
+        };
     });
-
+  
+    // run customization
+    console.log('Running customization...');
     const result = await runCustomizationUsingSdtf(context, requestDto);
 
+    // print info about results
+    let foundSdtfOutput = false;
     for (const outputId in result.outputs) {
         const output = result.outputs[outputId];
         if (!output.content) continue;
         for (const item of output.content) {
             if (item.contentType === 'model/vnd.sdtf') {
+                foundSdtfOutput = true;
                 console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
-                parseSdtf(item.href);
+                await parseSdtf(item.href);
             }
         }
     }
+    if (!foundSdtfOutput) {
+        console.log('No sdTF asset could be found among the outputs.');
+    }
+
+    // TODO: optionally save resulting sdTFs
 
 }
 

@@ -129,6 +129,30 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
 }
 
 /**
+ * Read an sdTF asset and return it.
+ * @param buffer 
+ */
+ export const readSdtf = async (buffer: ArrayBuffer | string) : Promise<ISdtfReadableAsset> => {
+    // create an instance of the sdTF SDK, also using the Rhino3dm integration
+    const sdk = await createSdtfSdk({
+        integrations: [ new SdtfRhino3dmTypeIntegration() ]
+    });
+    const parser = await sdk.createParser();
+    let asset: ISdtfReadableAsset;
+    if ((buffer as string).padStart) {
+        const str: string = buffer as string;
+        if (str.startsWith('http'))
+            asset = await parser.readFromUrl(str);
+        else 
+            asset = await parser.readFromFile(buffer as string) 
+    } else {
+        asset = parser.readFromBuffer(buffer as ArrayBuffer);
+    }
+
+    return asset;
+}
+
+/**
  * Parses and sdTF asset and prints basic information about the asset's contents.
  * @param buffer 
  */
@@ -149,6 +173,14 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
         asset = parser.readFromBuffer(buffer as ArrayBuffer);
     }
   
+    printSdtfInfo(asset);
+}
+
+/**
+ * Prints basic information about the asset's contents.
+ * @param asset 
+ */
+export const printSdtfInfo = async (asset: ISdtfReadableAsset) : Promise<void> => {
     console.log(`The sdTF asset contains ${asset.chunks.length} chunks.`);
 
     for (const chunk of asset.chunks) {
@@ -175,7 +207,8 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
 }
 
 /**
- * Map from sdTF typeHint to paramater type
+ * Map from sdTF typeHint to parameter type.
+ * Returns an empty string in case no matching parameter type could be found.
  */
 export const mapSdtfTypeHintToParameterType = (typeHint: SdtfTypeHintName): string => {
     switch (typeHint) {
@@ -220,6 +253,6 @@ export const mapSdtfTypeHintToParameterType = (typeHint: SdtfTypeHintName): stri
         case SdtfTypeHintName.STRING: 
             return 'sString';
         default: 
-            return 'unknown';
+            return '';
     }
 }

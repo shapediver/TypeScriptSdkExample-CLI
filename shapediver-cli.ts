@@ -198,7 +198,7 @@ yargs(process.argv.slice(2))
     )
     .command(
         "sdtf-example",
-        "Example for running computations of models which have sdTF inputs and outputs.",
+        "Run a computation of a model which has sdTF inputs and outputs.",
         (yargs) => {
             yargs
                 .options({
@@ -208,17 +208,23 @@ yargs(process.argv.slice(2))
                         type: "string",
                         demandOption: true,
                     },
+                    f: {
+                        alias: "filename",
+                        description: "Path to the sdTF file to be used",
+                        type: "string",
+                    },
                 })
         },
         async (argv) => {
             await sdTFExample(
                 argv.i as string,
+                argv.f as string,
             );
         },
     )
     .command(
         "parse-sdtf",
-        "Example for parsing an sdTF file, prints some information about the contents.",
+        "Parse an sdTF file and prints some information about the contents.",
         (yargs) => {
             yargs
                 .options({
@@ -260,7 +266,12 @@ yargs(process.argv.slice(2))
             console.log('"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days');
             console.log('"shapediver-cli.ts credit-usage -d 90"                    - Query credit usage for the past 90 days');
             console.log('"shapediver-cli.ts credit-usage --from 20220901 --to 20220930"');
-            console.log('                                                          - Query credit usage from 20220901 to 20220930');
+            console.log('');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER"            - Run a computation of a model which has sdTF inputs and outputs');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -f SDTF_FILE"');
+            console.log('                                                          - Use given sdTF file as input data');
+            console.log('');
+            console.log('"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents');
             console.log('');
         }
     )
