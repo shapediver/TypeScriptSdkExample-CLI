@@ -4,8 +4,9 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
-import { makeExampleSdtf, parseSdtf } from "./SdtfUtils";
+import { makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
+import { SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -146,9 +147,9 @@ export const sdTFExample = async (identifier: string) : Promise<void> => {
     const context = await initSession(data.access_data);
 
     // find matching parameters
-    const chunkTypes: Array<'String'|'Curve'|'Point'> = ['String'];
+    const chunkTypes: Array<SdtfTypeHintName> = [SdtfTypeHintName.RHINO_CURVE];
     chunkTypes.forEach(chunkType => {
-        const param = Object.values(context.dto.parameters).find(p => p.type === `s${chunkType}`);
+        const param = Object.values(context.dto.parameters).find(p => p.type === mapSdtfTypeHintToParameterType(chunkType));
         if (!param) {
             console.warn(`Could not find a matching parameter for chunk type ${chunkType}`);
         }
@@ -161,7 +162,7 @@ export const sdTFExample = async (identifier: string) : Promise<void> => {
     // create request dto
     const requestDto: {[id: string]: IParameterValue} = {};
     chunkTypes.forEach(chunkType => {
-        const param = Object.values(context.dto.parameters).find(p => p.type === `s${chunkType}`);
+        const param = Object.values(context.dto.parameters).find(p => p.type === mapSdtfTypeHintToParameterType(chunkType));
         if (param) {
             requestDto[param.id] = {
                 sdtf: { arrayBuffer: buffer /*, chunkName: chunkType*/ }

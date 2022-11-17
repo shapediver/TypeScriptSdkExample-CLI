@@ -4,8 +4,15 @@ import {
     SdtfRhino3dmTypeIntegration 
 } from "@shapediver/sdk.sdtf-rhino3dm";
 import { 
-    create as createSdtfSdk, ISdtfReadableAsset, SdtfRhinoTypeHintName 
+    create as createSdtfSdk, 
+    ISdtfReadableAsset, 
+    SdtfPrimitiveTypeHintName, 
+    SdtfRhinoTypeHintName,
+    SdtfTypeHintName,
 } from "@shapediver/sdk.sdtf-v1";
+import {
+    SdtfGeometryPoint3d
+} from "@shapediver/sdk.sdtf-geometry";
 
 /**
  * Create a sample sdTF which contains some chunks of data.
@@ -15,7 +22,7 @@ import {
  * @param chunkTypes 
  * @returns 
  */
-export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'>) : Promise<ArrayBuffer> => {
+export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Promise<ArrayBuffer> => {
     
     // create an instance of the sdTF SDK, also using the Rhino3dm integration
     const sdk = await createSdtfSdk({
@@ -28,22 +35,21 @@ export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'
     // it is important to use the same instance of rhino3dm which is used by the 3dm integration
     const rhino = SdtfRhino3dmSingleton.getInstance();
 
-    if (chunkTypes.includes('String')) {
+    if (chunkTypes.includes(SdtfTypeHintName.STRING)) {
         //// Step 1
         //// Create a chunk which represents a Grasshopper tree of strings ("String" in terms of Grasshopper).
 
-        const typeHintForStrings = "string";
         // Create two branches that hold the data - all of the same type.
         // Note that branches must consist of as many sub-lists as `paths.`
         const branches = [
             [
                 // Creating two data items, both storing their content directly in the sdTF JSON content object
-                factory.createDataItem("foo", typeHintForStrings),
-                factory.createDataItem("bar", typeHintForStrings),
+                factory.createDataItem("foo", SdtfPrimitiveTypeHintName.STRING),
+                factory.createDataItem("bar", SdtfPrimitiveTypeHintName.STRING),
             ],
             [
                 // Creating a data item that stores the content directly in the sdTF JSON content object
-                factory.createDataItem("baz", typeHintForStrings),
+                factory.createDataItem("baz", SdtfPrimitiveTypeHintName.STRING),
             ],
         ];
         
@@ -60,7 +66,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'
         builder.addChunkForTreeData("String", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Text']}));
     }
     
-    if (chunkTypes.includes('Curve')) {
+    if (chunkTypes.includes(SdtfTypeHintName.RHINO_CURVE)) {
         //// Step 2
         //// Create a chunk which represents a Grasshopper tree of polylines.
     
@@ -80,8 +86,8 @@ export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'
 
         const branches = [
             [
-                factory.createDataItem(polylineCurve, SdtfRhinoTypeHintName.RHINO_POLYLINE_CURVE ),
-                factory.createDataItem(polylineCurve2, SdtfRhinoTypeHintName.RHINO_POLYLINE_CURVE )
+                factory.createDataItem(polylineCurve, SdtfRhinoTypeHintName.RHINO_CURVE ),
+                factory.createDataItem(polylineCurve2, SdtfRhinoTypeHintName.RHINO_CURVE )
             ]
         ];
         const paths = [
@@ -90,17 +96,19 @@ export const makeExampleSdtf = async (chunkTypes: Array<'String'|'Curve'|'Point'
         builder.addChunkForTreeData("Curve", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Crv']}));
     }
 
-    if (chunkTypes.includes('Point')) {
+    if (chunkTypes.includes(SdtfTypeHintName.RHINO_POINT)) {
         //// Step 3
         //// Create a chunk which represents a Grasshopper tree of points.
     
-        // use rhino3dm.js and create a tree called "Point".
+        const pt1: SdtfGeometryPoint3d = [0.1, 0.2, 0.3];
+        const pt2: SdtfGeometryPoint3d = [0.4, 0.6, 0.8];
+        const pt3: SdtfGeometryPoint3d = [0.5, 0.7, 0.9];
        
         const branches = [
             [
-                factory.createDataItem(new rhino.Point([0.1, 0.2, 0.3]), SdtfRhinoTypeHintName.RHINO_POINT ),
-                factory.createDataItem(new rhino.Point([0.4, 0.6, 0.8]), SdtfRhinoTypeHintName.RHINO_POINT ),
-                factory.createDataItem(new rhino.Point([0.5, 0.7, 0.9]), SdtfRhinoTypeHintName.RHINO_POINT ),
+                factory.createDataItem(pt1, SdtfRhinoTypeHintName.RHINO_POINT ),
+                factory.createDataItem(pt2, SdtfRhinoTypeHintName.RHINO_POINT ),
+                factory.createDataItem(pt3, SdtfRhinoTypeHintName.RHINO_POINT ),
             ]
         ];
         const paths = [
@@ -169,25 +177,49 @@ export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> =>
 /**
  * Map from sdTF typeHint to paramater type
  */
-export const SdtfTypeHintToParameterTypeMap = {
-    'boolean': ['sBool'],
-    'color': ['sColor'],
-    'double': ['sNumber'],
-    'int32': ['sInteger'],
-    'geometry.box': ['sBox'],
-    'geometry.circle': ['sCircle'],
-    'geometry.interval': ['sDomain'],
-    'geometry.interval2': ['sDomain2D'],
-    'geometry.line': ['sLine'],
-    'geometry.plane': ['sPlane'],
-    'geometry.point3d': ['sPoint'],
-    'geometry.rectangle': ['sRectangle'],
-    'geometry.vector3d': ['sVector'],
-    'image': ['sBitmap'],
-    'rhino.brep': ['sBrep'],
-    'rhino.curve': ['sCurve'],
-    'rhino.mesh': ['sMesh'],
-    'rhino.subd': ['sSubdiv'],
-    'rhino.surface': ['sSurface'],
-    'string': ['sString'],
+export const mapSdtfTypeHintToParameterType = (typeHint: SdtfTypeHintName): string => {
+    switch (typeHint) {
+        case SdtfTypeHintName.BOOLEAN: 
+            return 'sBool';
+        case SdtfTypeHintName.COLOR:
+            return 'sColor';
+        case SdtfTypeHintName.DOUBLE:
+            return 'sNumber';
+        case SdtfTypeHintName.INT32:
+            return 'sInteger';
+        case SdtfTypeHintName.GEOMETRY_BOX: 
+            return 'sBox';
+        case SdtfTypeHintName.GEOMETRY_CIRCLE: 
+            return 'sCircle';
+        case SdtfTypeHintName.GEOMETRY_INTERVAL: 
+            return 'sDomain';
+        case SdtfTypeHintName.GEOMETRY_INTERVAL2: 
+            return 'sDomain2D';
+        case SdtfTypeHintName.GEOMETRY_LINE: 
+            return 'sLine';
+        case SdtfTypeHintName.GEOMETRY_PLANE: 
+            return 'sPlane';
+        case SdtfTypeHintName.GEOMETRY_POINT: 
+            return 'sPoint';
+        case SdtfTypeHintName.GEOMETRY_RECTANGLE: 
+            return 'sRectangle';
+        case SdtfTypeHintName.GEOMETRY_VECTOR: 
+            return 'sVector';
+        case SdtfTypeHintName.IMAGE: 
+            return 'sBitmap';
+        case SdtfTypeHintName.RHINO_BREP: 
+            return 'sBrep';
+        case SdtfTypeHintName.RHINO_CURVE: 
+            return 'sCurve';
+        case SdtfTypeHintName.RHINO_MESH: 
+            return 'sMesh';
+        case SdtfTypeHintName.RHINO_SUBD: 
+            return 'sSubdiv';
+        case SdtfTypeHintName.RHINO_SURFACE: 
+            return 'sSurface';
+        case SdtfTypeHintName.STRING: 
+            return 'sString';
+        default: 
+            return 'unknown';
+    }
 }
