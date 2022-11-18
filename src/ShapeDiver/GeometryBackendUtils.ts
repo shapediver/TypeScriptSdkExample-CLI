@@ -3,6 +3,7 @@ import {
     create, 
     ShapeDiverResponseDto, 
     ShapeDiverResponseExport, 
+    ShapeDiverResponseOutput, 
     ShapeDiverSdk 
 } from "@shapediver/sdk.geometry-api-sdk-v2";
 import * as fsp from 'fs/promises';
@@ -43,7 +44,23 @@ export const closeSession = async (session: ISessionData) : Promise<void> => {
 };
 
 /**
- * Run an export
+ * Run a customization and return all outputs.
+ * @param session Session data as returned from initSession
+ * @param parameters Parameter values to use, default values will be used for parameters not specified
+ * @param maxWaitMsec Maximum duration to wait for result (in milliseconds), pass value < 0 to disable limit.
+ *                    A ShapeDiverError will be thrown in case max_wait_time is exceeded.
+ */
+ export const runCustomization = async (session: ISessionData, parameters: {[paramId: string]: string}, maxWaitMsec: number = -1) : Promise<{[outputId: string]: ShapeDiverResponseOutput}> => {
+
+    const {sdk, dto} = session;
+
+    const result = await sdk.utils.submitAndWaitForCustomization(sdk, dto.sessionId, parameters, maxWaitMsec);
+
+    return (result.outputs as {[outputId: string]: ShapeDiverResponseOutput});
+}
+
+/**
+ * Run an export and return it.
  * @param session Session data as returned from initSession
  * @param parameters Parameter values to use, default values will be used for parameters not specified
  * @param id Id of the export

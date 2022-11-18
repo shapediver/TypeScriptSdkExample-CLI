@@ -62,6 +62,13 @@ Examples:
 "shapediver-cli.ts credit-usage --from 20220901 --to 20220930"
                                                           - Query credit usage from 20220901 to 20220930
 
+"shapediver-cli.ts sdtf-example -i IDENTIFIER"            - Run a computation of a model which has sdTF inputs and outputs
+"shapediver-cli.ts sdtf-example -i IDENTIFIER -f SDTF_FILE"
+                                                          - Use given sdTF file as input data
+"shapediver-cli.ts sdtf-example -i IDENTIFIER -s"         - Save the resulting sdTF files.
+
+"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents
+
 $
 ```
 
@@ -1037,6 +1044,81 @@ $ ./shapediver-cli.ts credit-usage --from 20220901 --to 20220930
 │   29    │ '20220930' │    0     │    0    │      0       │
 │   30    │   'SUM'    │    1     │    4    │      0       │
 └─────────┴────────────┴──────────┴─────────┴──────────────┘
+```
+
+</details>
+
+
+### Run sdTF computation
+<details>
+<summary>
+
+```
+$ ./shapediver-cli.ts sdtf-example -i curvepipe -f Grasshopper/SomeCurves.sdtf
+```
+
+</summary>
+
+```
+The sdTF asset contains 1 chunks.
+  Chunk name "aca94b27-19a3-43c3-a1e2-8e36faeed5d7", typeHint "rhino.curve":
+    Attributes:
+      "Name" => "Crv"
+    Branches:
+      [0,0] => 3 items
+      [0,1] => 20 items
+
+Matching of chunks to parameters:
+Matched chunk id "aca94b27-19a3-43c3-a1e2-8e36faeed5d7" name "Crv" with typeHint "rhino.curve" to parameter id "2dda6f57-2b58-442b-8d17-07f00c8129fa" name "Crv" with type "sCurve".
+
+Running customization:
+Customization request body:  {
+  "2dda6f57-2b58-442b-8d17-07f00c8129fa": {
+    "asset": {
+      "id": "pub/0ec32d44-27be-4888-9e6a-856e79592a7b",
+      "chunk": {
+        "id": "aca94b27-19a3-43c3-a1e2-8e36faeed5d7",
+        "name": "Crv"
+      }
+    }
+  }
+}
+
+Parsing result:
+Found sdTF asset for output with name "SDOutput", id "122fdd60fbaa30c8588da25674bf9d88"
+The sdTF asset contains 2 chunks.
+  Chunk name "cb2bce9f-e7a6-4f7d-a43a-7313cda38107", typeHint "rhino.curve":
+    Attributes:
+      "Name" => "Curve"
+    Branches:
+      [0,0] => 3 items
+      [0,1] => 20 items
+  Chunk name "bb8a271f-64c2-4694-b95f-48f72639281e", typeHint "unknown":
+    Attributes:
+      "Name" => "Text"
+```
+
+</details>
+
+
+### Parse sdTF and print basic information
+<details>
+<summary>
+
+```
+$ ./shapediver-cli.ts parse-sdtf -f Grasshopper/SomeCurves.sdtf
+```
+
+</summary>
+
+```
+The sdTF asset contains 1 chunks.
+  Chunk name "aca94b27-19a3-43c3-a1e2-8e36faeed5d7", typeHint "rhino.curve":
+    Attributes:
+      "Name" => "Crv"
+    Branches:
+      [0,0] => 3 items
+      [0,1] => 20 items
 ```
 
 </details>

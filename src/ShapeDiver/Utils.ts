@@ -4,6 +4,10 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
+import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
+import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
+import { ShapeDiverSdkApiResponseType } from "@shapediver/sdk.geometry-api-sdk-v2";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -134,4 +138,120 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
     const data = await queryUserCreditUsage(sdk, user_id, from, to, SdPlatformResponseAnalyticsTimestampType.Day);
 
     console.table(data);
+}
+
+export const sdTFExample = async (identifier: string, sdTFfilename?: string, saveSdtfs?: boolean) : Promise<void> => {
+
+    // get access to the model
+    const sdk = await initPlatformSdk();
+    const data = await getModelAccessData(sdk, identifier, true, true);
+    const context = await initSession(data.access_data);
+
+    // get input sdTF from command line, otherwise use auto-generated example
+    let sdTFbuffer: ArrayBuffer;
+    let sdTFasset: ISdtfReadableAsset;
+    if (sdTFfilename) {
+        try {
+            await fsp.access(sdTFfilename, fs.constants.R_OK);
+        } catch {
+            throw new Error(`File ${sdTFfilename} can not be read`)
+        }
+        sdTFasset = await readSdtf(sdTFfilename);
+        sdTFbuffer = await (await fsp.readFile(sdTFfilename)).buffer;
+    }
+    else {
+        console.log('No input sdTF file was provided, using an example.')
+        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.RHINO_CURVE, SdtfTypeHintName.STRING, SdtfTypeHintName.GEOMETRY_POINT]);
+        sdTFasset = await readSdtf(sdTFbuffer);
+        //await fsp.writeFile(`${identifier}.sdtf`, new DataView(sdTFbuffer));
+    }
+
+    // print information about input sdTF
+    console.log('Input sdTF:');
+    await printSdtfInfo(sdTFasset);
+    
+    console.log('\nMatching of chunks to parameters:');
+    // find matching parameters for chunks, and create request dto
+    const requestDto: {[id: string]: IParameterValue} = {};
+    for (const chunk of sdTFasset.chunks) {
+        // get chunk id
+        if (!chunk.name) return;
+        const chunkId = chunk.name;
+        // check if the chunk has a friendly name
+        const chunkFriendlyName = await getChunkNameFromAttributes(chunk);
+        const chunkDisplayName = chunkFriendlyName ? `id "${chunkId}" name "${chunkFriendlyName}"` : `id ${chunkId}`;
+        // verify that the chunk has a typeHint
+        if (!chunk.typeHint.name) {
+            console.warn(`Skipping chunk ${chunkDisplayName} which does not have a typeHint.`);
+            continue;
+        }
+        const typeHint = chunk.typeHint.name;
+        const parameterType = mapSdtfTypeHintToParameterType(typeHint as SdtfTypeHintName);
+        if (!parameterType) {
+            console.warn(`Skipping chunk ${chunkDisplayName} with typeHint "${typeHint}" for which no matching parameter type was found.`);
+            continue;
+        }
+        // find a matching parameter for the chunk
+        const params = Object.values(context.dto.parameters).filter(p => p.type === parameterType);
+        if (params.length === 0) {
+            console.warn(`No matching parameter for chunk ${chunkDisplayName} with typeHint "${typeHint}".`);
+            continue;
+        }
+        else if (params.length > 1) {
+            console.warn(`Multiple matching parameters for chunk ${chunkDisplayName} with typeHint "${typeHint}", picking the first one.`);
+        }
+        const param = params.find(p => !requestDto[p.id]);
+        if (!param) {
+            console.log(`Skipping chunk ${chunkDisplayName} with typeHint "${typeHint}" (parameters already matched to other chunks).`);
+        } else {
+            requestDto[param.id] = {
+                sdtf: { arrayBuffer: sdTFbuffer, chunkId: chunkId, chunkName: chunkFriendlyName }
+            };
+            console.log(`Matched chunk ${chunkDisplayName} with typeHint "${typeHint}" to parameter id "${param.id}" name "${param.name}" with type "${param.type}".`);
+        }
+    };
+  
+    // run customization
+    console.log('\nRunning customization:');
+    const result = await runCustomizationUsingSdtf(context, requestDto);
+
+    // print info about results
+    console.log('\nParsing result:');
+    let foundSdtfOutput = false;
+    for (const outputId in result.outputs) {
+        const output = result.outputs[outputId];
+        if (!output.content) continue;
+        for (const item of output.content) {
+            if (item.contentType === 'model/vnd.sdtf') {
+                foundSdtfOutput = true;
+                console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
+                await parseSdtf(item.href, data.access_data.access_token);
+                if (saveSdtfs) {
+                    const buf = await context.sdk.utils.download(item.href, ShapeDiverSdkApiResponseType.DATA) as [any, Buffer];
+                    const filename = `${output.name}_${output.id}:${output.version}.sdtf`;
+                    try {
+                        await fsp.writeFile(filename, buf[1]);
+                    } catch (e) {
+                        console.log(`File ${filename} could not be saved.`, e)
+                    }
+                }
+            }
+        }
+    }
+    if (!foundSdtfOutput) {
+        console.log('No sdTF asset could be found among the outputs.');
+    }
+
+    // TODO: optionally save resulting sdTFs
+
+}
+
+export const sdTFParse = async (filename: string) : Promise<void> => {
+    try {
+        await fsp.access(filename, fs.constants.R_OK);
+    } catch {
+        throw new Error(`File ${filename} can not be read`)
+    }
+
+    await parseSdtf(filename);
 }
