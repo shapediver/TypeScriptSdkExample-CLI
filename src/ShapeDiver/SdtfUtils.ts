@@ -133,10 +133,11 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
  * Read an sdTF asset and return it.
  * @param buffer 
  */
- export const readSdtf = async (buffer: ArrayBuffer | string) : Promise<ISdtfReadableAsset> => {
+ export const readSdtf = async (buffer: ArrayBuffer | string, authToken?: string) : Promise<ISdtfReadableAsset> => {
     // create an instance of the sdTF SDK, also using the Rhino3dm integration
     const sdk = await createSdtfSdk({
-        integrations: [ new SdtfRhino3dmTypeIntegration() ]
+        integrations: [ new SdtfRhino3dmTypeIntegration() ],
+        authToken
     });
     const parser = await sdk.createParser();
     let asset: ISdtfReadableAsset;
@@ -157,23 +158,8 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
  * Parses and sdTF asset and prints basic information about the asset's contents.
  * @param buffer 
  */
-export const parseSdtf = async (buffer: ArrayBuffer | string) : Promise<void> => {
-    // create an instance of the sdTF SDK, also using the Rhino3dm integration
-    const sdk = await createSdtfSdk({
-        integrations: [ new SdtfRhino3dmTypeIntegration() ]
-    });
-    const parser = await sdk.createParser();
-    let asset: ISdtfReadableAsset;
-    if ((buffer as string).padStart) {
-        const str: string = buffer as string;
-        if (str.startsWith('http'))
-            asset = await parser.readFromUrl(str);
-        else 
-            asset = await parser.readFromFile(buffer as string) 
-    } else {
-        asset = parser.readFromBuffer(buffer as ArrayBuffer);
-    }
-  
+export const parseSdtf = async (buffer: ArrayBuffer | string, authToken?: string) : Promise<void> => {
+    const asset = await readSdtf(buffer, authToken);
     printSdtfInfo(asset);
 }
 

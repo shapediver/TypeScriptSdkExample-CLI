@@ -224,7 +224,7 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string) : P
             if (item.contentType === 'model/vnd.sdtf') {
                 foundSdtfOutput = true;
                 console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
-                await parseSdtf(item.href);
+                await parseSdtf(item.href, data.access_data.access_token);
             }
         }
     }
