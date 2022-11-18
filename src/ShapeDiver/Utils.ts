@@ -4,7 +4,7 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
-import { makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
+import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
 
@@ -160,7 +160,7 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string) : P
     }
     else {
         console.log('No input sdTF file was provided, using an example.')
-        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.RHINO_CURVE]);
+        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.RHINO_CURVE, SdtfTypeHintName.STRING, SdtfTypeHintName.GEOMETRY_POINT]);
         sdTFasset = await readSdtf(sdTFbuffer);
         //await fsp.writeFile(`${identifier}.sdtf`, new DataView(sdTFbuffer));
     }
@@ -169,39 +169,53 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string) : P
     console.log('Input sdTF:');
     await printSdtfInfo(sdTFasset);
     
+    console.log('\nMatching of chunks to parameters:');
     // find matching parameters for chunks, and create request dto
     const requestDto: {[id: string]: IParameterValue} = {};
-    sdTFasset.chunks.forEach(chunk => {
+    for (const chunk of sdTFasset.chunks) {
+        // get chunk id
         if (!chunk.name) return;
+        const chunkId = chunk.name;
+        // check if the chunk has a friendly name
+        const chunkFriendlyName = await getChunkNameFromAttributes(chunk);
+        const chunkDisplayName = chunkFriendlyName ? `id "${chunkId}" name "${chunkFriendlyName}"` : `id ${chunkId}`;
+        // verify that the chunk has a typeHint
         if (!chunk.typeHint.name) {
-            console.warn(`Skipping chunk ${chunk.name} which does not have a typeHint.`);
-            return;
+            console.warn(`Skipping chunk ${chunkDisplayName} which does not have a typeHint.`);
+            continue;
         }
         const typeHint = chunk.typeHint.name;
         const parameterType = mapSdtfTypeHintToParameterType(typeHint as SdtfTypeHintName);
         if (!parameterType) {
-            console.warn(`Skipping chunk ${chunk.name} with typeHint ${typeHint} for which no matching parameter type was found.`);
-            return;
+            console.warn(`Skipping chunk ${chunkDisplayName} with typeHint "${typeHint}" for which no matching parameter type was found.`);
+            continue;
         }
+        // find a matching parameter for the chunk
         const params = Object.values(context.dto.parameters).filter(p => p.type === parameterType);
         if (params.length === 0) {
-            console.warn(`Could not find a matching parameter for chunk ${chunk.name} with typeHint ${typeHint}.`);
-            return;
+            console.warn(`No matching parameter for chunk ${chunkDisplayName} with typeHint "${typeHint}".`);
+            continue;
         }
         else if (params.length > 1) {
-            console.warn(`Found multiple matching parameters for chunk ${chunk.name} with typeHint ${typeHint}, picking the first one.`);
+            console.warn(`Multiple matching parameters for chunk ${chunkDisplayName} with typeHint "${typeHint}", picking the first one.`);
         }
-        const param = params[0];
-        requestDto[param.id] = {
-            sdtf: { arrayBuffer: sdTFbuffer /*, chunkName: chunkType*/ }
-        };
-    });
+        const param = params.find(p => !requestDto[p.id]);
+        if (!param) {
+            console.log(`Skipping chunk ${chunkDisplayName} with typeHint "${typeHint}" (parameters already matched to other chunks).`);
+        } else {
+            requestDto[param.id] = {
+                sdtf: { arrayBuffer: sdTFbuffer, chunkId: chunkId, chunkName: chunkFriendlyName }
+            };
+            console.log(`Matched chunk ${chunkDisplayName} with typeHint "${typeHint}" to parameter id "${param.id}" name "${param.name}" with type "${param.type}".`);
+        }
+    };
   
     // run customization
-    console.log('Running customization...');
+    console.log('\nRunning customization:');
     const result = await runCustomizationUsingSdtf(context, requestDto);
 
     // print info about results
+    console.log('\nParsing result:');
     let foundSdtfOutput = false;
     for (const outputId in result.outputs) {
         const output = result.outputs[outputId];

@@ -6,6 +6,7 @@ import {
 import { 
     create as createSdtfSdk, 
     ISdtfReadableAsset, 
+    ISdtfReadableChunk, 
     SdtfPrimitiveTypeHintName, 
     SdtfRhinoTypeHintName,
     SdtfTypeHintName,
@@ -204,6 +205,24 @@ export const printSdtfInfo = async (asset: ISdtfReadableAsset) : Promise<void> =
         }
 
     }
+}
+
+/**
+ * Given a chunk try to get the chunk's "friendly" name from its attributes.
+ * Returns an empty string if no such name was found.
+ * @param chunk 
+ */
+export const getChunkNameFromAttributes = async (chunk: ISdtfReadableChunk): Promise<string> => {
+    if (chunk.attributes) {
+        const key = Object.keys(chunk.attributes.entries).find(k => 
+            k.toLowerCase() === 'name' 
+            && chunk.attributes.entries[k].typeHint?.name === 'string'
+        );
+        if (key) {
+            return await chunk.attributes.entries[key].getContent() as string;
+        }
+    }
+    return ''
 }
 
 /**

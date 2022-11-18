@@ -1059,7 +1059,6 @@ $ ./shapediver-cli.ts sdtf-example -i curvepipe -f Grasshopper/SomeCurves.sdtf
 </summary>
 
 ```
-Input sdTF:
 The sdTF asset contains 1 chunks.
   Chunk name "aca94b27-19a3-43c3-a1e2-8e36faeed5d7", typeHint "rhino.curve":
     Attributes:
@@ -1067,10 +1066,24 @@ The sdTF asset contains 1 chunks.
     Branches:
       [0,0] => 3 items
       [0,1] => 20 items
-Running customization...
-Customization request body {
-  '2dda6f57-2b58-442b-8d17-07f00c8129fa': 'pub/a1addb5d-2091-419d-b421-3fd3501c5c83'
+
+Matching of chunks to parameters:
+Matched chunk id "aca94b27-19a3-43c3-a1e2-8e36faeed5d7" name "Crv" with typeHint "rhino.curve" to parameter id "2dda6f57-2b58-442b-8d17-07f00c8129fa" name "Crv" with type "sCurve".
+
+Running customization:
+Customization request body:  {
+  "2dda6f57-2b58-442b-8d17-07f00c8129fa": {
+    "asset": {
+      "id": "pub/0ec32d44-27be-4888-9e6a-856e79592a7b",
+      "chunk": {
+        "id": "aca94b27-19a3-43c3-a1e2-8e36faeed5d7",
+        "name": "Crv"
+      }
+    }
+  }
 }
+
+Parsing result:
 Found sdTF asset for output with name "SDOutput", id "122fdd60fbaa30c8588da25674bf9d88"
 The sdTF asset contains 2 chunks.
   Chunk name "cb2bce9f-e7a6-4f7d-a43a-7313cda38107", typeHint "rhino.curve":

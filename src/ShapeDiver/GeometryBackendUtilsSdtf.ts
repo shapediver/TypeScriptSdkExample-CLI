@@ -33,7 +33,12 @@ export interface IParameterValue {
          */
         arrayBuffer?: ArrayBuffer,
         /**
-         * Optional id or name of the chunk which should be used.
+         * Optional id of the chunk which should be used.
+         * Please read about the chunk selection logic here: https://help.shapediver.com/doc/sdtf-structured-data-transfer-format#sdTF-Structureddatatransferformat-Chunkselectionlogic
+         */
+        chunkId?: string
+        /**
+         * Optional name of the chunk which should be used.
          * Please read about the chunk selection logic here: https://help.shapediver.com/doc/sdtf-structured-data-transfer-format#sdTF-Structureddatatransferformat-Chunkselectionlogic
          */
         chunkName?: string
@@ -104,27 +109,17 @@ export const runCustomizationUsingSdtf = async (session: ISessionData, parameter
    
     // prepare parameter data
     const requestBody: ShapeDiverRequestCustomization = {};
-    // TODO remove once fixed: https://shapediver.atlassian.net/browse/SS-5987
-    const requestBodyStrings: ShapeDiverRequestCustomization = {};
     Object.keys(parameters).forEach(paramId => {
         const value = parameters[paramId];
         // did we get a string value?
         if (value.value) {
             requestBody[paramId] = value.value;
-            requestBodyStrings[paramId] = value.value;
         }
         // did we get sdTF data?
         else if (value.sdtf) {
             // was an id specified for the sdTF?
             let stypeValue: ShapeDiverRequestParameterSType = {};
             if (value.sdtf.id) {
-                // in case no chunk name was specified, send a string value
-                // TODO remove once fixed: https://shapediver.atlassian.net/browse/SS-5986
-                if (!value.sdtf.chunkName) {
-                    requestBody[paramId] = value.sdtf.id;
-                    requestBodyStrings[paramId] = value.sdtf.id;
-                    return;
-                } 
                 stypeValue = {
                     asset: {
                         id: value.sdtf.id
@@ -134,13 +129,6 @@ export const runCustomizationUsingSdtf = async (session: ISessionData, parameter
             // an ArrayBuffer must have been specified in this case (validation happens above)
             else {
                 const index = sdTFsForUpload.indexOf(value.sdtf.arrayBuffer);
-                // in case no chunk name was specified, send a string value
-                // TODO remove once fixed: https://shapediver.atlassian.net/browse/SS-5986
-                if (!value.sdtf.chunkName) {
-                    requestBody[paramId] = response.asset.sdtf[index].id;
-                    requestBodyStrings[paramId] = response.asset.sdtf[index].id;
-                    return;
-                }
                 stypeValue = {
                     asset: {
                         id: response.asset.sdtf[index].id
@@ -148,16 +136,15 @@ export const runCustomizationUsingSdtf = async (session: ISessionData, parameter
                 };
             }
             // was a chunk name specified?
-            if (value.sdtf.chunkName) {
-                stypeValue.asset.chunk = {name: value.sdtf.chunkName};
+            if (value.sdtf.chunkId || value.sdtf.chunkName) {
+                stypeValue.asset.chunk = {id: value.sdtf.chunkId, name: value.sdtf.chunkName};
             }
             requestBody[paramId] = stypeValue;
-            requestBodyStrings[paramId] = JSON.stringify(stypeValue);
         }
     });
-    console.log('Customization request body', requestBody);
+    console.log('Customization request body: ', JSON.stringify(requestBody, null, 2));
 
-    const result = await sdk.utils.submitAndWaitForCustomization(sdk, dto.sessionId, requestBodyStrings, maxWaitMsec);
+    const result = await sdk.utils.submitAndWaitForCustomization(sdk, dto.sessionId, requestBody, maxWaitMsec);
 
     return {
         requestBody,
