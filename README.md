@@ -65,6 +65,7 @@ Examples:
 "shapediver-cli.ts sdtf-example -i IDENTIFIER"            - Run a computation of a model which has sdTF inputs and outputs
 "shapediver-cli.ts sdtf-example -i IDENTIFIER -f SDTF_FILE"
                                                           - Use given sdTF file as input data
+"shapediver-cli.ts sdtf-example -i IDENTIFIER -s"         - Save the resulting sdTF files.
 
 "shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents
 

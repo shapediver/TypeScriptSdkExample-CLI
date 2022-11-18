@@ -213,12 +213,18 @@ yargs(process.argv.slice(2))
                         description: "Path to the sdTF file to be used",
                         type: "string",
                     },
+                    s: {
+                        alias: "save",
+                        description: "Save the resulting sdTF files",
+                        type: "boolean",
+                    },
                 })
         },
         async (argv) => {
             await sdTFExample(
                 argv.i as string,
                 argv.f as string,
+                typeof argv.s === 'boolean' ? argv.s as boolean : false,
             );
         },
     )
@@ -270,6 +276,7 @@ yargs(process.argv.slice(2))
             console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER"            - Run a computation of a model which has sdTF inputs and outputs');
             console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -f SDTF_FILE"');
             console.log('                                                          - Use given sdTF file as input data');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -s"         - Save the resulting sdTF files.');
             console.log('');
             console.log('"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents');
             console.log('');

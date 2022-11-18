@@ -7,6 +7,7 @@ import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponse
 import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
+import { ShapeDiverSdkApiResponseType } from "@shapediver/sdk.geometry-api-sdk-v2";
 
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean) : Promise<void> => {
 
@@ -139,7 +140,7 @@ export const displayUserCreditUsage = async (identifier: string, days: number, f
     console.table(data);
 }
 
-export const sdTFExample = async (identifier: string, sdTFfilename?: string) : Promise<void> => {
+export const sdTFExample = async (identifier: string, sdTFfilename?: string, saveSdtfs?: boolean) : Promise<void> => {
 
     // get access to the model
     const sdk = await initPlatformSdk();
@@ -225,6 +226,15 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string) : P
                 foundSdtfOutput = true;
                 console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
                 await parseSdtf(item.href, data.access_data.access_token);
+                if (saveSdtfs) {
+                    const buf = await context.sdk.utils.download(item.href, ShapeDiverSdkApiResponseType.DATA) as [any, Buffer];
+                    const filename = `${output.name}_${output.id}:${output.version}.sdtf`;
+                    try {
+                        await fsp.writeFile(filename, buf[1]);
+                    } catch (e) {
+                        console.log(`File ${filename} could not be saved.`, e)
+                    }
+                }
             }
         }
     }
