@@ -322,11 +322,6 @@ export interface NotifyUsersUserOptions
   organization_filter?: NotifyUsersOrganizationFilter;
   organization_roles?: string | Array<string>;
   dry_run?: boolean;
-
-  /**
-   * If not full result of users is returned ( if 'offset' exists in response), pass offset to get next batch of results.
-   */
-  offset?: string;
 }
 
 /**
@@ -403,10 +398,11 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 
 
   // if not dry run, create notifications. 
-  if (uo.dry_run !== true)
+  if (uo.dry_run === false)
   {
     for (let user of users)
     {
+      console.log(`Creating notification for user id "${user.id}", username "${user.username}", email "${user.email}".`);
       try
       {
         await sdk.notifications.create({
