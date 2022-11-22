@@ -261,11 +261,10 @@ yargs(process.argv.slice(2))
                         alias: "plan-name",
                         description: "Name of subscribed chargebee plan.",
                         type: "string",
-                        demandOption: true 
                     },
                     f: {
                         alias: "features",
-                        description: "Features of user.  If array, concat with ','.  example: admin, exports, imports ",
+                        description: "Features of user.  If array, concat with ','.  example: admin,exports,imports ",
                         type: "string"
                     }, 
                     o: {
@@ -276,28 +275,28 @@ yargs(process.argv.slice(2))
                     },
                     r: {
                         alias: "organization-role",
-                        description: `The organization role. Checks for user in organization role or in roles. If array, concat with ','.  example: owner, user `,
+                        description: `The organization role. Checks for user in organization role or in roles. If array, concat with ','.  example: owner,user `,
                         type: "string"
                     },
-                    d: {
+                    "dry-run": {
                         alias: "dry-run",
-                        description: "If dry run, notifactions are not sent. Just returns and prints list of users which are fetched. Use 'y' for dry run.",
+                        description: "If true (default), notifactions are not created. Just returns and prints list of users which are fetched.",
                         type: "boolean"
                     },
                     h: {
-                        alias: "notification-href",
-                        description: "Link for notification. Can be used to link release notes etc...",
+                        alias: "href",
+                        description: "Link to add to the notification. Can be used to link release notes etc.",
                         type: "string"
                     },
                     t: {
-                        alias: "notification-type",
+                        alias: "type",
                         description: "The notification type.",
                         type: "string",
                         demandOption: true,
                     },
-                    n: {
-                        alias: "notification-description",
-                        description: "The description of a notification",
+                    d: {
+                        alias: "description",
+                        description: "The description of the notification.",
                         type: "string",
                         demandOption: true 
                     }
@@ -338,11 +337,8 @@ yargs(process.argv.slice(2))
             }
 
             // handle dry run
-            let dry_run = false;
-            if(argv.d === "y"){
-                dry_run = true;
-            }
-
+            const dry_run = typeof argv.d === 'boolean' ? argv.d as boolean : true;
+            
             await notifyUsersPlatform({
                 subscribed_plan_name: argv.p,
                 features_of_user: features,
@@ -389,11 +385,15 @@ yargs(process.argv.slice(2))
             console.log('');
             console.log('"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents');
             console.log('');
-            console.log('"shapediver-cli.ts notify-users -p pro -dn description"   - Send notifications to users');
-            console.log('"shapediver-cli.ts notify-users -p pro -f admin,exports');
-            console.log('                                -o y -r admin,owner -d y');
-            console.log('                                -n description -t maintenance"');
-            console.log('                                                          - Send notification to to users with all filters filled the parameters.');
+            console.log('"shapediver-cli.ts notify-users                           - Send notifications to users according to the specified filter criteria."');
+            console.log('                                -d DESCRIPTION            - Description to use for notification.');
+            console.log('                                -t TYPE                   - Type of notification.');
+            console.log('                                -h URL                    - Optional URL to add to notification.');
+            console.log('                                -p PLAN_NAME              - Search users by name of the plan they are subscribed to.');
+            console.log('                                -o \'y\' or \'n\'             - Search users which are (are not) members of an org.');
+            console.log('                                -ft FEATURES              - Search users by features.');
+            console.log('                                -ff FEATURES              - Search users by features which they do not have.');
+            console.log('                                --dry-run false           - Used to disable dry run mode.');
             console.log('');
         }
     )

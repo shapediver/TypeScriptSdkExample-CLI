@@ -392,7 +392,11 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
       offset = users_res.data.pagination.next_offset;
       users = users.concat(users_res.data.result);
 
-      console.dir(users_res.data.pagination);
+      if (offset) {
+        console.log(`Fetched ${users.length} users, continuing...`)
+      } else {
+        console.log(`Fetched ${users.length} users, done.`)
+      }
 
   } while (offset != null);
 
@@ -421,6 +425,9 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
         throw ex;
       }
     }
+  }
+  else {
+    console.log(`Dry run mode, not creating notifications.`);
   }
 
   return users;
