@@ -1,5 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
+import { NotifyUsersOrganizationFilter } from "./src/ShapeDiver/PlatformBackendUtils";
 import { 
     createAndUploadModel, 
     displayLatestModels, 
@@ -7,6 +8,7 @@ import {
     displayModelInfoGeometry, 
     displayModelInfoPlatform, 
     displayUserCreditUsage, 
+    notifyUsersPlatform, 
     publishModel, 
     sdTFExample, 
     sdTFParse
@@ -249,6 +251,113 @@ yargs(process.argv.slice(2))
         },
     )
     .command(
+        "notify-users",
+        "Notify our users about updates, maintenance, etc.",
+        (yargs) => 
+        {
+            yargs
+                .options({
+                    p: {
+                        alias: "plan-name",
+                        description: "Name of subscribed chargebee plan.",
+                        type: "string",
+                        demandOption: true 
+                    },
+                    f: {
+                        alias: "features",
+                        description: "Features of user.  If array, concat with ','.  example: admin, exports, imports ",
+                        type: "string"
+                    }, 
+                    o: {
+                        alias: "has-organization",
+                        description: `If users should be in organization. Can be one of 'y', 'n' or empty. If 'y' user must be in organization.
+                         If 'n' filters users without organization. Empty does nothing.`,
+                        type: "string"
+                    },
+                    r: {
+                        alias: "organization-role",
+                        description: `The organization role. Checks for user in organization role or in roles. If array, concat with ','.  example: owner, user `,
+                        type: "string"
+                    },
+                    d: {
+                        alias: "dry-run",
+                        description: "If dry run, notifactions are not sent. Just returns and prints list of users which are fetched. Use 'y' for dry run.",
+                        type: "boolean"
+                    },
+                    h: {
+                        alias: "notification-href",
+                        description: "Link for notification. Can be used to link release notes etc...",
+                        type: "string"
+                    },
+                    t: {
+                        alias: "notification-type",
+                        description: "The notification type.",
+                        type: "string",
+                        demandOption: true,
+                    },
+                    n: {
+                        alias: "notification-description",
+                        description: "The description of a notification",
+                        type: "string",
+                        demandOption: true 
+                    }
+                
+                })
+        },
+        async (argv) => {
+
+            // handle features
+            let features: Array<string>|string = null;
+            if(argv.f && (argv.f as string).indexOf(",") > 0) {
+                features = (argv.f as string).split(",");
+            }
+            else if(argv.f && argv.f != "") {
+                features = argv.f;
+            }
+
+            // handle organization filter
+            let organization_filter = NotifyUsersOrganizationFilter.NoFilter;
+            if(argv.o === "y")
+            {
+                organization_filter = NotifyUsersOrganizationFilter.InOrganization;
+            }
+            else if(argv.o === "n")
+            {
+                organization_filter = NotifyUsersOrganizationFilter.NotInOrganization;
+            }
+
+            // handle organization roles
+            let organization_roles : Array<string>|string = null;
+            if(argv.r && (argv.r as string).indexOf(",") > 0)
+            {
+                organization_roles = (argv.r as string).split(",");
+            }
+            else if(argv.r && argv.r != "")
+            {
+                organization_roles = argv.r;
+            }
+
+            // handle dry run
+            let dry_run = false;
+            if(argv.d === "y"){
+                dry_run = true;
+            }
+
+            await notifyUsersPlatform({
+                subscribed_plan_name: argv.p,
+                features_of_user: features,
+                organization_filter,
+                organization_roles,
+                dry_run
+            }, {
+                href: argv.h,
+                type: argv.t,
+                description: argv.n
+            });
+        },
+        
+        )
+    .command(
         "*",
         "",
         () => {
@@ -279,6 +388,12 @@ yargs(process.argv.slice(2))
             console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -s"         - Save the resulting sdTF files.');
             console.log('');
             console.log('"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents');
+            console.log('');
+            console.log('"shapediver-cli.ts notify-users -p pro -dn description"   - Send notifications to users');
+            console.log('"shapediver-cli.ts notify-users -p pro -f admin,exports');
+            console.log('                                -o y -r admin,owner -d y');
+            console.log('                                -n description -t maintenance"');
+            console.log('                                                          - Send notification to to users with all filters filled the parameters.');
             console.log('');
         }
     )
