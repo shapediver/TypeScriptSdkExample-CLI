@@ -1,7 +1,16 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
-import { NotifyUsersOrganizationFilter } from "./src/ShapeDiver/PlatformBackendUtils";
-import { createAndUploadModel, displayLatestModels, displayModelAccessData, displayModelInfoGeometry, displayModelInfoPlatform, displayUserCreditUsage, notifyUsersPlatform, publishModel } from "./src/ShapeDiver/Utils"
+import { 
+    createAndUploadModel, 
+    displayLatestModels, 
+    displayModelAccessData, 
+    displayModelInfoGeometry, 
+    displayModelInfoPlatform, 
+    displayUserCreditUsage, 
+    publishModel, 
+    sdTFExample, 
+    sdTFParse
+} from "./src/ShapeDiver/Utils"
 
 const yargs = require("yargs")
 
@@ -188,6 +197,58 @@ yargs(process.argv.slice(2))
         },
     )
     .command(
+        "sdtf-example",
+        "Run a computation of a model which has sdTF inputs and outputs.",
+        (yargs) => {
+            yargs
+                .options({
+                    i: {
+                        alias: "id",
+                        description: "Model identifier (slug, id, guid)",
+                        type: "string",
+                        demandOption: true,
+                    },
+                    f: {
+                        alias: "filename",
+                        description: "Path to the sdTF file to be used",
+                        type: "string",
+                    },
+                    s: {
+                        alias: "save",
+                        description: "Save the resulting sdTF files",
+                        type: "boolean",
+                    },
+                })
+        },
+        async (argv) => {
+            await sdTFExample(
+                argv.i as string,
+                argv.f as string,
+                typeof argv.s === 'boolean' ? argv.s as boolean : false,
+            );
+        },
+    )
+    .command(
+        "parse-sdtf",
+        "Parse an sdTF file and prints some information about the contents.",
+        (yargs) => {
+            yargs
+                .options({
+                    f: {
+                        alias: "filename",
+                        description: "Path to the sdTF file to be parsed",
+                        type: "string",
+                        demandOption: true,
+                    },
+                })
+        },
+        async (argv) => {
+            await sdTFParse(
+                argv.f as string,
+            );
+        },
+    )
+    .command(
         "notify-users",
         "Notify our users about updates, maintenance, etc.",
         (yargs) => 
@@ -318,7 +379,13 @@ yargs(process.argv.slice(2))
             console.log('"shapediver-cli.ts credit-usage"                          - Query credit usage for the past 31 days');
             console.log('"shapediver-cli.ts credit-usage -d 90"                    - Query credit usage for the past 90 days');
             console.log('"shapediver-cli.ts credit-usage --from 20220901 --to 20220930"');
-            console.log('                                                          - Query credit usage from 20220901 to 20220930');
+            console.log('');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER"            - Run a computation of a model which has sdTF inputs and outputs');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -f SDTF_FILE"');
+            console.log('                                                          - Use given sdTF file as input data');
+            console.log('"shapediver-cli.ts sdtf-example -i IDENTIFIER -s"         - Save the resulting sdTF files.');
+            console.log('');
+            console.log('"shapediver-cli.ts parse-sdtf -f SDTF_FILE"               - Parse an sdTF file and prints some information about the contents');
             console.log('');
             console.log('"shapediver-cli.ts notify-users -p pro -dn description"   - Send notifications to users');
             console.log('"shapediver-cli.ts notify-users -p pro -f admin,exports');
