@@ -1,5 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
+import { NotifyUsersOrganizationFilter } from "./src/ShapeDiver/PlatformBackendUtils";
 import { 
     createAndUploadModel, 
     displayLatestModels, 
@@ -7,6 +8,7 @@ import {
     displayModelInfoGeometry, 
     displayModelInfoPlatform, 
     displayUserCreditUsage, 
+    notifyUsersPlatform, 
     publishModel, 
     sdTFExample, 
     sdTFParse
