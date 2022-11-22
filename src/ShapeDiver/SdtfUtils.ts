@@ -195,10 +195,10 @@ export const printSdtfInfo = async (asset: ISdtfReadableAsset) : Promise<void> =
 
 /**
  * Given a chunk try to get the chunk's "friendly" name from its attributes.
- * Returns an empty string if no such name was found.
+ * Returns undefined if no such name was found.
  * @param chunk 
  */
-export const getChunkNameFromAttributes = async (chunk: ISdtfReadableChunk): Promise<string> => {
+export const getChunkNameFromAttributes = async (chunk: ISdtfReadableChunk): Promise<string | undefined> => {
     if (chunk.attributes) {
         const key = Object.keys(chunk.attributes.entries).find(k => 
             k.toLowerCase() === 'name' 
@@ -208,7 +208,6 @@ export const getChunkNameFromAttributes = async (chunk: ISdtfReadableChunk): Pro
             return await chunk.attributes.entries[key].getContent() as string;
         }
     }
-    return ''
 }
 
 /**

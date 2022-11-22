@@ -181,7 +181,7 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string, sav
         const chunkFriendlyName = await getChunkNameFromAttributes(chunk);
         const chunkDisplayName = chunkFriendlyName ? `id "${chunkId}" name "${chunkFriendlyName}"` : `id ${chunkId}`;
         // verify that the chunk has a typeHint
-        if (!chunk.typeHint.name) {
+        if (!chunk.typeHint?.name) {
             console.warn(`Skipping chunk ${chunkDisplayName} which does not have a typeHint.`);
             continue;
         }
@@ -227,10 +227,10 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string, sav
                 console.log(`Found sdTF asset for output with name "${output.name}", id "${output.id}"`);
                 await parseSdtf(item.href, data.access_data.access_token);
                 if (saveSdtfs) {
-                    const buf = await context.sdk.utils.download(item.href, ShapeDiverSdkApiResponseType.DATA) as [any, Buffer];
+                    const buf = await context.sdk.utils.download(item.href, ShapeDiverSdkApiResponseType.DATA);
                     const filename = `${output.name}_${output.id}:${output.version}.sdtf`;
                     try {
-                        await fsp.writeFile(filename, buf[1]);
+                        await fsp.writeFile(filename, new DataView(buf[1]));
                     } catch (e) {
                         console.log(`File ${filename} could not be saved.`, e)
                     }
