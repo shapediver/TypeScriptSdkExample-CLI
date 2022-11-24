@@ -263,8 +263,13 @@ yargs(process.argv.slice(2))
                         type: "string",
                     },
                     f: {
-                        alias: "features",
-                        description: "Features of user.  If array, concat with ','.  example: admin,exports,imports ",
+                        alias: "features-true",
+                        description: "Filters user based on features of a user. Check where individual feature is true. If array, concat with ','.  example: admin,exports,imports ",
+                        type: "string"
+                    }, 
+                    n: {
+                        alias: "features-false",
+                        description: "Filters user based on features of a user. Check where individual feature is false. If array, concat with ','.  example: admin,exports,imports ",
                         type: "string"
                     }, 
                     o: {
@@ -306,12 +311,20 @@ yargs(process.argv.slice(2))
         async (argv) => {
 
             // handle features
-            let features: Array<string>|string = null;
+            let features_true: Array<string>|string = null;
             if(argv.f && (argv.f as string).indexOf(",") > 0) {
-                features = (argv.f as string).split(",");
+                features_true = (argv.f as string).split(",");
             }
             else if(argv.f && argv.f != "") {
-                features = argv.f;
+                features_true = argv.f;
+            }
+
+            let features_false: Array<string>|string = null;
+            if(argv.n && (argv.n as string).indexOf(",") > 0) {
+                features_false = (argv.n as string).split(",");
+            }
+            else if(argv.n && argv.n != "") {
+                features_false = argv.n;
             }
 
             // handle organization filter
@@ -338,10 +351,13 @@ yargs(process.argv.slice(2))
 
             // handle dry run
             const dry_run = typeof argv.d === 'boolean' ? argv.d as boolean : true;
+
+            console.log(argv);
             
             await notifyUsersPlatform({
                 subscribed_plan_name: argv.p,
-                features_of_user: features,
+                features_of_user_true_value: features_true,
+                features_of_user_false_value: features_false,
                 organization_filter,
                 organization_roles,
                 dry_run
@@ -391,8 +407,8 @@ yargs(process.argv.slice(2))
             console.log('                                -h URL                    - Optional URL to add to notification.');
             console.log('                                -p PLAN_NAME              - Search users by name of the plan they are subscribed to.');
             console.log('                                -o \'y\' or \'n\'             - Search users which are (are not) members of an org.');
-            console.log('                                -ft FEATURES              - Search users by features.');
-            console.log('                                -ff FEATURES              - Search users by features which they do not have.');
+            console.log('                                -f FEATURES              - Search users by features.');
+            console.log('                                -n FEATURES              - Search users by features which they do not have.');
             console.log('                                --dry-run false           - Used to disable dry run mode.');
             console.log('');
         }

@@ -318,7 +318,8 @@ export enum NotifyUsersOrganizationFilter
 export interface NotifyUsersUserOptions 
 {
   subscribed_plan_name: string;
-  features_of_user?: string | Array<string>;
+  features_of_user_true_value?: string | Array<string>;
+  features_of_user_false_value?: string | Array<string>;
   organization_filter?: NotifyUsersOrganizationFilter;
   organization_roles?: string | Array<string>;
   dry_run?: boolean;
@@ -345,16 +346,28 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
   };
 
   // Fatures of user filter
-  if (Array.isArray(uo.features_of_user))
+  if (Array.isArray(uo.features_of_user_true_value))
   {
-    for (let feature of uo.features_of_user)
+    for (let feature of uo.features_of_user_true_value)
     {
       filter[`user_features->feature->${feature.trim()}`] = true;
     }
   }
-  else if (uo.features_of_user && uo.features_of_user != "")
+  else if (uo.features_of_user_true_value && uo.features_of_user_true_value != "")
   {
-    filter[`user_features->feature->${uo.features_of_user}`] = true;
+    filter[`user_features->feature->${uo.features_of_user_true_value}`] = true;
+  }
+
+  if (Array.isArray(uo.features_of_user_false_value))
+  {
+    for (let feature of uo.features_of_user_false_value)
+    {
+      filter[`user_features->feature->${feature.trim()}`] = false;
+    }
+  }
+  else if (uo.features_of_user_false_value && uo.features_of_user_false_value != "")
+  {
+    filter[`user_features->feature->${uo.features_of_user_false_value}`] = false;
   }
 
   // organization filter.
