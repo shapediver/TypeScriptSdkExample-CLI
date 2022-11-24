@@ -352,8 +352,6 @@ yargs(process.argv.slice(2))
             // handle dry run
             const dry_run = typeof argv.d === 'boolean' ? argv.d as boolean : true;
 
-            console.log(argv);
-            
             await notifyUsersPlatform({
                 subscribed_plan_name: argv.p,
                 features_of_user_true_value: features_true,

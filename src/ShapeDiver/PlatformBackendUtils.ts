@@ -340,12 +340,15 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 {
   const uo = notify_users_user_options;
 
-  const filter = {
-    "chargebee_user.type": "plan",
-    "chargebee_user.data->name": uo.subscribed_plan_name
+  const filter = {};
+
+  // Filter by subscribed plan name
+  if (uo.subscribed_plan_name) {
+    filter["chargebee_user.type"] = "plan";
+    filter["chargebee_user.data->name"] = uo.subscribed_plan_name;
   };
 
-  // Fatures of user filter
+  // Features of user filter
   if (Array.isArray(uo.features_of_user_true_value))
   {
     for (let feature of uo.features_of_user_true_value)
