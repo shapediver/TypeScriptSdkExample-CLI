@@ -13,6 +13,9 @@ The CLI tool offered by this example allows to do things like:
   * get access data for a ShapeDiver model
   * print information about a ShapeDiver model
   * programmatically upload new Grasshopper models to ShapeDiver
+  * run computations of models
+  * run computations of models which make use of [sdTF](https://github.com/shapediver/sdTF) inputs and outputs
+  * etc
 
 # Setup
 
