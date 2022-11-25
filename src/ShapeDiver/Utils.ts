@@ -207,7 +207,7 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string, sav
         const chunkId = chunk.name;
         // check if the chunk has a friendly name
         const chunkFriendlyName = await getChunkNameFromAttributes(chunk);
-        const chunkDisplayName = chunkFriendlyName ? `id "${chunkId}" name "${chunkFriendlyName}"` : `id ${chunkId}`;
+        const chunkDisplayName = chunkFriendlyName ? `id "${chunkId}" name "${chunkFriendlyName}"` : `id "${chunkId}"`;
         // verify that the chunk has a typeHint
         if (!chunk.typeHint?.name) {
             console.warn(`Skipping chunk ${chunkDisplayName} which does not have a typeHint.`);
