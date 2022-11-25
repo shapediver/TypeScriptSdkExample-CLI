@@ -283,7 +283,7 @@ yargs(process.argv.slice(2))
                         description: `The organization role. Checks for user in organization role or in roles. If array, concat with ','.  example: owner,user `,
                         type: "string"
                     },
-                    "dry-run": {
+                    dryrun: {
                         alias: "dry-run",
                         description: "If true (default), notifactions are not created. Just returns and prints list of users which are fetched.",
                         type: "boolean"
@@ -350,7 +350,7 @@ yargs(process.argv.slice(2))
             }
 
             // handle dry run
-            const dry_run = typeof argv.d === 'boolean' ? argv.d as boolean : true;
+            const dry_run = typeof argv.dryrun === 'boolean' ? argv.dryrun as boolean : (argv.dryrun === 'false' ? false : true);
 
             await notifyUsersPlatform({
                 subscribed_plan_name: argv.p,
@@ -362,7 +362,7 @@ yargs(process.argv.slice(2))
             }, {
                 href: argv.h,
                 type: argv.t,
-                description: argv.n
+                description: argv.d
             });
         },
         
@@ -403,11 +403,11 @@ yargs(process.argv.slice(2))
             console.log('                                -d DESCRIPTION            - Description to use for notification.');
             console.log('                                -t TYPE                   - Type of notification.');
             console.log('                                -h URL                    - Optional URL to add to notification.');
-            console.log('                                -p PLAN_NAME              - Search users by name of the plan they are subscribed to.');
+            console.log('                                -p PLAN_NAME              - Search users by name of the plan they are subscribed to, case sensitive!');
             console.log('                                -o \'y\' or \'n\'             - Search users which are (are not) members of an org.');
             console.log('                                -f FEATURES              - Search users by features.');
             console.log('                                -n FEATURES              - Search users by features which they do not have.');
-            console.log('                                --dry-run false           - Used to disable dry run mode.');
+            console.log('                                --dryrun false           - Used to disable dry run mode.');
             console.log('');
         }
     )

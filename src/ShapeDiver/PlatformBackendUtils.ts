@@ -340,12 +340,17 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 {
   const uo = notify_users_user_options;
 
+  // validation
+  if ( -1 === Object.keys(SdPlatformNotificationType).findIndex(k => SdPlatformNotificationType[k] === notification_options.type) ) {
+    throw new Error(`Notification type must be one of ${Object.values(SdPlatformNotificationType).join(",")}`);
+  }
+
   const filter = {};
 
   // Filter by subscribed plan name
   if (uo.subscribed_plan_name) {
     filter["chargebee_user.type"] = "plan";
-    filter["chargebee_user.data->name"] = uo.subscribed_plan_name;
+    filter["chargebee_user.data->name[%]"] = uo.subscribed_plan_name;
   };
 
   // Features of user filter
