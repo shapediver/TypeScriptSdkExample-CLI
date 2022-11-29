@@ -409,6 +409,12 @@ yargs(process.argv.slice(2))
             console.log('                                -n FEATURES              - Search users by features which they do not have.');
             console.log('                                --dryrun false           - Used to disable dry run mode.');
             console.log('');
+            console.log('  Example: Notify all organization admins and owners:');
+            console.log('    "./shapediver-cli.ts notify-users -t TYPE -d DESCRIPTION -o y -r owner,admin"');
+            console.log('');
+            console.log('  Example: Notify all users subscribed to plans called "%Business%":');
+            console.log('    "./shapediver-cli.ts notify-users -t TYPE -d DESCRIPTION -o n -p Business"');
+            console.log('');
         }
     )
     .argv
