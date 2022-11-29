@@ -259,7 +259,12 @@ yargs(process.argv.slice(2))
                 .options({
                     p: {
                         alias: "plan-name",
-                        description: "Name of subscribed chargebee plan.",
+                        description: "Name of subscribed chargebee plan (query using LIKE operator).",
+                        type: "string",
+                    },
+                    pe: {
+                        alias: "plan-name-exact",
+                        description: "Exact name of subscribed chargebee plan.",
                         type: "string",
                     },
                     f: {
@@ -354,6 +359,7 @@ yargs(process.argv.slice(2))
 
             await notifyUsersPlatform({
                 subscribed_plan_name: argv.p,
+                subscribed_plan_name_exact: argv.pe,
                 features_of_user_true_value: features_true,
                 features_of_user_false_value: features_false,
                 organization_filter,

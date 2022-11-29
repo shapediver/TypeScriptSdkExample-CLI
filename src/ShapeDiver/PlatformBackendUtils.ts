@@ -318,6 +318,7 @@ export enum NotifyUsersOrganizationFilter
 export interface NotifyUsersUserOptions 
 {
   subscribed_plan_name: string;
+  subscribed_plan_name_exact: string;
   features_of_user_true_value?: string | Array<string>;
   features_of_user_false_value?: string | Array<string>;
   organization_filter?: NotifyUsersOrganizationFilter;
@@ -348,10 +349,14 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
   const filter = {};
 
   // Filter by subscribed plan name
-  if (uo.subscribed_plan_name) {
+  if (uo.subscribed_plan_name_exact) {
+    filter["chargebee_user.type"] = "plan";
+    filter["chargebee_user.data->name[=]"] = uo.subscribed_plan_name_exact;
+  }
+  else if (uo.subscribed_plan_name) {
     filter["chargebee_user.type"] = "plan";
     filter["chargebee_user.data->name[%]"] = uo.subscribed_plan_name;
-  };
+  }
 
   // Features of user filter
   if (Array.isArray(uo.features_of_user_true_value))
