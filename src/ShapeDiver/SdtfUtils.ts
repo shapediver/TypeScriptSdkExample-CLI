@@ -64,7 +64,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         // Add a chunk called "String" to the sdTF asset builder.
         // We name it "String" because this is the default name of Grasshopper text paramater components. 
         // You could choose any name you like. 
-        builder.addChunkForTreeData("String", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Text']}));
+        builder.addChunkForTreeData("String", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Text', SdtfPrimitiveTypeHintName.STRING]}));
     }
     
     if (chunkTypes.includes(SdtfTypeHintName.RHINO_CURVE)) {
@@ -94,7 +94,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         const paths = [
             [ 0 ]
         ];
-        builder.addChunkForTreeData("Curve", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Crv']}));
+        builder.addChunkForTreeData("Curve", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Crv', SdtfPrimitiveTypeHintName.STRING]}));
     }
 
     if (chunkTypes.includes(SdtfTypeHintName.RHINO_POINT)) {
@@ -115,7 +115,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         const paths = [
             [ 0 ]
         ];
-        builder.addChunkForTreeData("Point", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Pt']}));
+        builder.addChunkForTreeData("Point", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Pt', SdtfPrimitiveTypeHintName.STRING]}));
     }
 
     //// Final step
