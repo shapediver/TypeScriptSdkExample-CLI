@@ -309,8 +309,12 @@ yargs(process.argv.slice(2))
                         description: "The description of the notification.",
                         type: "string",
                         demandOption: true 
+                    },
+                    offset: {
+                        alias: "offset",
+                        description: `Offset to start querying users at.`,
+                        type: "string"
                     }
-                
                 })
         },
         async (argv) => {
@@ -364,7 +368,8 @@ yargs(process.argv.slice(2))
                 features_of_user_false_value: features_false,
                 organization_filter,
                 organization_roles,
-                dry_run
+                dry_run,
+                offset: argv.offset
             }, {
                 href: argv.h,
                 type: argv.t,
@@ -424,6 +429,7 @@ yargs(process.argv.slice(2))
             console.log('                                -f FEATURES               - Search users by features.');
             console.log('                                -n FEATURES               - Search users by features which they do not have.');
             console.log('                                --dryrun false            - Used to disable dry run mode.');
+            console.log('                                --offset OFFSET           - Offset to start querying users at.');
             console.log('');
             console.log('  Example: Notify all organization admins and owners:');
             console.log('    "./shapediver-cli.ts notify-users -t TYPE -d DESCRIPTION -o y -r owner,admin"');

@@ -14,11 +14,11 @@ import
   SdPlatformModelVisibility,
   SdPlatformRequestModelStatus,
   SdPlatformResponseAnalyticsTimestampType,
-  SdPlatformResponseUserMinimal,
   SdPlatformNotificationCreator,
   SdPlatformNotificationLevel,
   SdPlatformNotificationClass,
   SdPlatformNotificationType,
+  SdPlatformResponseUserPublic,
 } from "@shapediver/sdk.platform-api-sdk-v1";
 import { config } from "../../config";
 import { IGeometryBackendAccessData } from "./Commons";
@@ -324,6 +324,7 @@ export interface NotifyUsersUserOptions
   organization_filter?: NotifyUsersOrganizationFilter;
   organization_roles?: string | Array<string>;
   dry_run?: boolean;
+  offset?: string
 }
 
 /**
@@ -337,7 +338,7 @@ export interface NotifyUsersNotificationOptions
 }
 
 
-export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions): Promise<Array<SdPlatformResponseUserMinimal>> => 
+export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options: NotifyUsersUserOptions, notification_options: NotifyUsersNotificationOptions): Promise<Array<SdPlatformResponseUserPublic>> => 
 {
   const uo = notify_users_user_options;
 
@@ -403,9 +404,12 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
     filter["organization_role"] = uo.organization_roles;
   }
 
-  let users = [];
-
   let offset = null;
+  if (uo.offset)
+    offset = uo.offset;
+
+  let users_notified : SdPlatformResponseUserPublic[] = [];
+
   do
   {
     const users_res = await sdk.users.query({
@@ -416,7 +420,8 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
     });
 
     offset = users_res.data.pagination.next_offset;
-    users = users.concat(users_res.data.result);
+    const users = users_res.data.result as SdPlatformResponseUserPublic[];
+    users_notified = users_notified.concat(users);
 
     if (offset) {
       console.log(`Fetched ${users.length} users, current offset ${offset}.`)
@@ -455,7 +460,7 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 
   } while (offset != null);
 
-  return users;
+  return users_notified;
 }
 
 
