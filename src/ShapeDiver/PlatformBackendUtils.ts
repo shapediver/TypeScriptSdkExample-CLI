@@ -408,53 +408,52 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
   let offset = null;
   do
   {
-      const users_res = await sdk.users.query({
-        filters: filter,
-        limit: 25,
-        strict_limit: true,
-        offset: offset
-      });
+    const users_res = await sdk.users.query({
+      filters: filter,
+      limit: 25,
+      strict_limit: true,
+      offset: offset
+    });
 
-      offset = users_res.data.pagination.next_offset;
-      users = users.concat(users_res.data.result);
+    offset = users_res.data.pagination.next_offset;
+    users = users.concat(users_res.data.result);
 
-      if (offset) {
-        console.log(`Fetched ${users.length} users, continuing...`)
-      } else {
-        console.log(`Fetched ${users.length} users, done.`)
-      }
+    if (offset) {
+      console.log(`Fetched ${users.length} users, current offset ${offset}.`)
+    } else {
+      console.log(`Fetched ${users.length} users, done.`)
+    }
 
-  } while (offset != null);
-
-
-  // if not dry run, create notifications. 
-  if (uo.dry_run === false)
-  {
-    for (let user of users)
+    // if not dry run, create notifications. 
+    if (uo.dry_run === false)
     {
-      console.log(`Creating notification for user id "${user.id}", username "${user.username}", email "${user.email}".`);
-      try
+      for (let user of users)
       {
-        await sdk.notifications.create({
-          creator: SdPlatformNotificationCreator.Platform,
-          level: SdPlatformNotificationLevel.Info,
-          class: SdPlatformNotificationClass.Account,
-          type: notification_options.type,
-          description: notification_options.description,
-          receiver_id: user.id,
-          href: notification_options.href
-        });
-      }
-      catch (ex)
-      {
-        console.log(ex);
-        throw ex;
+        console.log(`Creating notification for user id "${user.id}", username "${user.username}", email "${user.email}".`);
+        try
+        {
+          await sdk.notifications.create({
+            creator: SdPlatformNotificationCreator.Platform,
+            level: SdPlatformNotificationLevel.Info,
+            class: SdPlatformNotificationClass.Account,
+            type: notification_options.type,
+            description: notification_options.description,
+            receiver_id: user.id,
+            href: notification_options.href
+          });
+        }
+        catch (ex)
+        {
+          console.log(ex);
+          throw ex;
+        }
       }
     }
-  }
-  else {
-    console.log(`Dry run mode, not creating notifications.`);
-  }
+    else {
+      console.log(`Dry run mode, not creating notifications.`);
+    }
+
+  } while (offset != null);
 
   return users;
 }
