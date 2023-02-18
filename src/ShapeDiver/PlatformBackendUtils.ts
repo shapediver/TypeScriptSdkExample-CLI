@@ -349,6 +349,9 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 
   const filter = {};
 
+  // Don't send notifications to deleted users
+  filter["deleted_at[?]"] = null;
+
   // Filter by subscribed plan name
   if (uo.subscribed_plan_name_exact) {
     filter["chargebee_user.type"] = "plan";
@@ -414,6 +417,7 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
   {
     const users_res = await sdk.users.query({
       filters: filter,
+      //sorters: {'created_at': SdPlatformSortingOrder.Asc},
       limit: 25,
       strict_limit: true,
       offset: offset
