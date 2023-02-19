@@ -12,7 +12,9 @@ import {
     SdtfTypeHintName,
 } from "@shapediver/sdk.sdtf-v1";
 import {
-    SdtfGeometryPoint3d
+    SdtfGeometryLineType,
+    SdtfGeometryPoint3d,
+    SdtfGeometryPolylineType
 } from "@shapediver/sdk.sdtf-geometry";
 
 /**
@@ -67,6 +69,53 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         builder.addChunkForTreeData("String", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Text', SdtfPrimitiveTypeHintName.STRING]}));
     }
     
+    if (chunkTypes.includes(SdtfTypeHintName.GEOMETRY_LINE)) {
+        //// Step 2
+        //// Create a chunk which represents a Grasshopper tree of lines.
+        const line1 : SdtfGeometryLineType = [[0,0,0], [1,0,0]];
+        const line2 : SdtfGeometryLineType = [[1,0,0], [2,1,0]];
+        const line3 : SdtfGeometryLineType = [[2,1,0], [1,2,0]];
+       
+        const branches = [
+            [
+                factory.createDataItem(line1, SdtfTypeHintName.GEOMETRY_LINE ),
+                factory.createDataItem(line2, SdtfTypeHintName.GEOMETRY_LINE ),
+                factory.createDataItem(line3, SdtfTypeHintName.GEOMETRY_LINE )
+            ]
+        ];
+        const paths = [
+            [ 0 ]
+        ];
+        builder.addChunkForTreeData("Line", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Line', SdtfPrimitiveTypeHintName.STRING]}));
+    }
+
+    if (chunkTypes.includes(SdtfTypeHintName.GEOMETRY_POLYLINE)) {
+        //// Step 2
+        //// Create a chunk which represents a Grasshopper tree of polylines.
+      
+        // create some polylines
+        const polyline : SdtfGeometryPolylineType = [];
+        polyline.push([0.1, 0.2, 0.3]);
+        polyline.push([0.4, 0.6, 0.8]);
+        polyline.push([0.5, 0.7, 0.9]);
+        
+        const polyline2 : SdtfGeometryPolylineType = [];
+        polyline2.push([1.1, 1.2, 1.3]);
+        polyline2.push([1.4, 1.6, 1.8]);
+        polyline2.push([1.5, 1.7, 1.9]);
+
+        const branches = [
+            [
+                factory.createDataItem(polyline, SdtfTypeHintName.GEOMETRY_POLYLINE ),
+                factory.createDataItem(polyline2, SdtfTypeHintName.GEOMETRY_POLYLINE )
+            ]
+        ];
+        const paths = [
+            [ 0 ]
+        ];
+        builder.addChunkForTreeData("Polyline", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Polyline', SdtfPrimitiveTypeHintName.STRING]}));
+    }
+
     if (chunkTypes.includes(SdtfTypeHintName.RHINO_CURVE)) {
         //// Step 2
         //// Create a chunk which represents a Grasshopper tree of polylines.
@@ -83,7 +132,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         // create a second polyline curve
         const polylineCurve2 = polylineCurve.duplicate();
         // @ts-ignore
-        polylineCurve2.transform(rhino.Transform.translation(1, 0, 0));
+        polylineCurve2.transform(rhino.Transform.translation(1, 0, 2));
 
         const branches = [
             [
@@ -97,7 +146,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         builder.addChunkForTreeData("Curve", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Crv', SdtfPrimitiveTypeHintName.STRING]}));
     }
 
-    if (chunkTypes.includes(SdtfTypeHintName.RHINO_POINT)) {
+    if (chunkTypes.includes(SdtfTypeHintName.GEOMETRY_POINT)) {
         //// Step 3
         //// Create a chunk which represents a Grasshopper tree of points.
     
@@ -107,9 +156,9 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
        
         const branches = [
             [
-                factory.createDataItem(pt1, SdtfRhinoTypeHintName.RHINO_POINT ),
-                factory.createDataItem(pt2, SdtfRhinoTypeHintName.RHINO_POINT ),
-                factory.createDataItem(pt3, SdtfRhinoTypeHintName.RHINO_POINT ),
+                factory.createDataItem(pt1, SdtfTypeHintName.GEOMETRY_POINT ),
+                factory.createDataItem(pt2, SdtfTypeHintName.GEOMETRY_POINT ),
+                factory.createDataItem(pt3, SdtfTypeHintName.GEOMETRY_POINT ),
             ]
         ];
         const paths = [
@@ -117,6 +166,7 @@ export const makeExampleSdtf = async (chunkTypes: Array<SdtfTypeHintName>) : Pro
         ];
         builder.addChunkForTreeData("Point", { branches: branches, paths: paths }, factory.createAttributes({'Name': ['Pt', SdtfPrimitiveTypeHintName.STRING]}));
     }
+    
 
     //// Final step
     
@@ -213,49 +263,131 @@ export const getChunkNameFromAttributes = async (chunk: ISdtfReadableChunk): Pro
 /**
  * Map from sdTF typeHint to parameter type.
  * Returns an empty string in case no matching parameter type could be found.
+ * 
+ * TODO there is no need for a one to one mapping here, as an example 
+ * a GEOMETRY_CIRCLE could be mapped to a sCircle or an sCurve.
  */
 export const mapSdtfTypeHintToParameterType = (typeHint: SdtfTypeHintName): string => {
     switch (typeHint) {
+
+        /* SdtfPrimitiveTypeHintName */
         case SdtfTypeHintName.BOOLEAN: 
             return 'sBool';
+        case SdtfTypeHintName.CHAR:
+            return 'sString';
         case SdtfTypeHintName.COLOR:
             return 'sColor';
+        //case SdtfTypeHintName.DATA:
+        //    return 'MISSING';
+        case SdtfTypeHintName.DECIMAL:
+            return 'sNumber';
         case SdtfTypeHintName.DOUBLE:
             return 'sNumber';
+        case SdtfTypeHintName.GUID:
+            return 'sNumber';
+        case SdtfTypeHintName.IMAGE: 
+            return 'sBitmap';
+        case SdtfTypeHintName.INT8:
+            return 'sInteger';
+        case SdtfTypeHintName.INT16:
+            return 'sInteger';
         case SdtfTypeHintName.INT32:
             return 'sInteger';
+        case SdtfTypeHintName.INT64:
+            return 'sInteger';
+        case SdtfTypeHintName.SINGLE: 
+            return 'sNumber';
+        case SdtfTypeHintName.STRING: 
+            return 'sString';
+        case SdtfTypeHintName.UINT8:
+            return 'sInteger';
+        case SdtfTypeHintName.UINT16:
+            return 'sInteger';
+        case SdtfTypeHintName.UINT32:
+            return 'sInteger';
+        case SdtfTypeHintName.UINT64:
+            return 'sInteger';
+
+        /* SdtfGeometryTypeHintName */
+        case SdtfTypeHintName.GEOMETRY_ARC: 
+            return 'sCurve';
+        case SdtfTypeHintName.GEOMETRY_BOUNDING_BOX: 
+            return 'sBox';
         case SdtfTypeHintName.GEOMETRY_BOX: 
             return 'sBox';
         case SdtfTypeHintName.GEOMETRY_CIRCLE: 
             return 'sCircle';
+        //case SdtfTypeHintName.GEOMETRY_COMPLEX: 
+        //    return 'MISSING';
+        case SdtfTypeHintName.GEOMETRY_CONE: 
+            return 'sBrep';
+        case SdtfTypeHintName.GEOMETRY_CYLINDER: 
+            return 'sBrep';
+        case SdtfTypeHintName.GEOMETRY_ELLIPSE: 
+            return 'sCurve';
         case SdtfTypeHintName.GEOMETRY_INTERVAL: 
             return 'sDomain';
         case SdtfTypeHintName.GEOMETRY_INTERVAL2: 
             return 'sDomain2D';
         case SdtfTypeHintName.GEOMETRY_LINE: 
             return 'sLine';
+        //case SdtfTypeHintName.GEOMETRY_MATRIX: 
+        //    return 'MISSING';
         case SdtfTypeHintName.GEOMETRY_PLANE: 
             return 'sPlane';
         case SdtfTypeHintName.GEOMETRY_POINT: 
             return 'sPoint';
+        case SdtfTypeHintName.GEOMETRY_POLYLINE: 
+            return 'sCurve';
+        //case SdtfTypeHintName.GEOMETRY_RAY: 
+        //    return 'MISSING';
         case SdtfTypeHintName.GEOMETRY_RECTANGLE: 
             return 'sRectangle';
+        case SdtfTypeHintName.GEOMETRY_SPHERE:
+            return 'sSurface';
+        case SdtfTypeHintName.GEOMETRY_TORUS:
+            return 'sSurface';
+        //case SdtfTypeHintName.GEOMETRY_TRANSFORM:
+        //    return 'MISSING';
         case SdtfTypeHintName.GEOMETRY_VECTOR: 
             return 'sVector';
-        case SdtfTypeHintName.IMAGE: 
-            return 'sBitmap';
-        case SdtfTypeHintName.RHINO_BREP: 
+
+        /* SdtfGrasshopperTypeHintName */
+        //case SdtfTypeHintName.GRASSHOPPER_PATH: 
+        //    return 'MISSING';
+
+        /* SdtfRhinoTypeHintName */
+        case SdtfTypeHintName.RHINO_ARC_CURVE: 
+            return 'sCurve';
+        case SdtfTypeHintName.RHINO_BREP:
             return 'sBrep';
         case SdtfTypeHintName.RHINO_CURVE: 
             return 'sCurve';
+        case SdtfTypeHintName.RHINO_EXTRUSION: 
+            return 'sBrep';
+        case SdtfTypeHintName.RHINO_LINE_CURVE: 
+            return 'sCurve';
         case SdtfTypeHintName.RHINO_MESH: 
             return 'sMesh';
+        case SdtfTypeHintName.RHINO_NURBS_CURVE: 
+            return 'sCurve';
+        case SdtfTypeHintName.RHINO_NURBS_SURFACE: 
+            return 'sSurface';
+        case SdtfTypeHintName.RHINO_PLANE_SURFACE: 
+            return 'sSurface';
+        case SdtfTypeHintName.RHINO_POINT: 
+            return 'sPoint';
+        case SdtfTypeHintName.RHINO_POLY_CURVE:
+            return 'sCurve';
+        case SdtfTypeHintName.RHINO_POLYLINE_CURVE:
+            return 'sCurve';
+        case SdtfTypeHintName.RHINO_REV_SURFACE:
+            return 'sSurface';
         case SdtfTypeHintName.RHINO_SUBD: 
             return 'sSubdiv';
         case SdtfTypeHintName.RHINO_SURFACE: 
             return 'sSurface';
-        case SdtfTypeHintName.STRING: 
-            return 'sString';
+        
         default: 
             return '';
     }

@@ -189,7 +189,7 @@ export const sdTFExample = async (identifier: string, sdTFfilename?: string, sav
     }
     else {
         console.log('No input sdTF file was provided, using an example.')
-        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.RHINO_CURVE, SdtfTypeHintName.STRING, SdtfTypeHintName.GEOMETRY_POINT]);
+        sdTFbuffer = await makeExampleSdtf([SdtfTypeHintName.STRING, SdtfTypeHintName.GEOMETRY_LINE, SdtfTypeHintName.GEOMETRY_POLYLINE, SdtfTypeHintName.RHINO_CURVE, SdtfTypeHintName.GEOMETRY_POINT]);
         sdTFasset = await readSdtf(sdTFbuffer);
         //await fsp.writeFile(`${identifier}.sdtf`, new DataView(sdTFbuffer));
     }
