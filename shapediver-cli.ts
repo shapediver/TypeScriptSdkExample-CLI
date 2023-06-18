@@ -7,6 +7,7 @@ import {
     displayModelAccessData, 
     displayModelInfoGeometry, 
     displayModelInfoPlatform, 
+    displayModelsByModelViewUrl, 
     displayUserCreditUsage, 
     notifyUsersPlatform, 
     publishModel, 
@@ -72,6 +73,26 @@ yargs(process.argv.slice(2))
             await displayLatestModels(
                 argv.l ? argv.l as number : 10,
                 typeof argv.o === 'boolean' ? argv.o as boolean : true,
+            );
+        },
+    )
+    .command(
+        "list-models-by-backend",
+        "Query and display models by backend system",
+        (yargs) => {
+            yargs
+                .options({
+                    m: {
+                        alias: "model-view-url",
+                        description: "The model view URL to search models by",
+                        type: 'string',
+                        demandOption: true,
+                    }
+                })
+        },
+        async (argv) => {
+            await displayModelsByModelViewUrl(
+                argv.m
             );
         },
     )

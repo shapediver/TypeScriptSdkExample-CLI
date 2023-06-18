@@ -10,12 +10,13 @@ import {
     NotifyUsersNotificationOptions, 
     NotifyUsersUserOptions, 
     patchModelStatus, 
+    queryAllMatchingModels, 
     queryUserCreditUsage 
 } from "./PlatformBackendUtils";
 import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
@@ -37,6 +38,48 @@ export const displayLatestModels = async (limit: number, own: boolean): Promise<
     const models = await listLatestModels(sdk, limit, own);
 
     console.log(models);
+}
+
+interface IModelsPerUser {
+    [key: string]: {
+        id: string,
+        slug: string,
+        title: string
+    }[]
+}
+
+export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise<void> => 
+{
+    const sdk = await initPlatformSdk();
+
+    const filters = {
+        'backend_system.model_view_url[=]': modelViewUrl,
+        'status[,]': ['pending', 'confirmed', 'done']
+    }
+
+    const modelsPerUser : { [key: string]: IModelsPerUser | { email: string } } = {}
+
+    console.log('Model id;User id;Status;Slug;Title')
+    await queryAllMatchingModels(sdk, filters, async ({id, user, slug, status, title}) => {
+        //console.log(`${id};${user.id};${status};${slug};${title}`)
+        if ( !modelsPerUser[user.id] ) { 
+
+            modelsPerUser[user.id] = {}
+
+            modelsPerUser[user.id]['pending'] = []
+            modelsPerUser[user.id]['confirmed'] = []
+            modelsPerUser[user.id]['done'] = []
+
+            const u = await sdk.users.get<SdPlatformResponseUserPublic>(user.id)
+            modelsPerUser[user.id].email = u.data.email
+            console.log(u.data.email)
+        }
+        modelsPerUser[user.id][status].splice(
+            modelsPerUser[user.id][status].length, 0, {id, slug, title}
+        )
+    })
+
+    await await fsp.writeFile('modelsPerUser.json', JSON.stringify(modelsPerUser))
 }
 
 export const displayModelInfoPlatform = async (identifier: string): Promise<void> =>

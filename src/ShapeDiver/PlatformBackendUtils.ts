@@ -158,6 +158,38 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
   return models;
 }
 
+export const queryAllMatchingModels = async (sdk: SdPlatformSdk, filters: any, 
+  callback: (model: SdPlatformResponseModelOwner) => Promise<void>
+  ): Promise<SdPlatformResponseModelOwner[]> =>
+{
+  const models: SdPlatformResponseModelOwner[] = []
+  let offset: string | undefined
+
+  while (true) {
+    const result = (await sdk.models.query<SdPlatformResponseModelOwner>({
+      sorters: { created_at: SdPlatformSortingOrder.Desc },
+      limit: 100,
+      filters,
+      embed: [SdPlatformModelQueryEmbeddableFields.User],
+      strict_limit: false,
+      offset
+    })).data;
+
+    models.splice( models.length, 0, ...result.result)
+    console.log(`Models found: ${models.length}`)
+
+    for (const model of result.result) {
+      await callback(model)
+    } 
+ 
+    if (!result.pagination.next_offset)
+      break
+    offset = result.pagination.next_offset
+  }
+
+  return models;
+}
+
 /**
  * Create a model
  * 
