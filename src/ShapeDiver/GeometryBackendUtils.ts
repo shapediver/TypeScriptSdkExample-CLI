@@ -142,7 +142,7 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
     epochStart = Date.now();
     while ( !['confirmed', 'denied', 'pending'].includes(dto.model.stat) ) {
         if (Date.now() - epochStart > 2 * max_comp_time) {
-            console.warn(`Model check did not complete within ${max_comp_time / 500} seconds.`);
+            console.warn(`Model check did not complete within ${max_comp_time / 1000} seconds.`);
             return {
                 sdk,
                 dto
