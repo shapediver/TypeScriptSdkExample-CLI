@@ -168,10 +168,11 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
     const htmlHeader = '<head><title>ShapeDiver - Rhino 5 Geometry Backend Decommissioning</title></head>'
     let htmlBody = headingHtml(1, "ShapeDiver - Rhino 5 Geometry Backend Decommissioning")
     htmlBody += 'After almost 7 years of operating a ShapeDiver Geometry Backend system based on Rhino 5, we are planning to decommission it on 31st August 2023. '
-    htmlBody += 'Rhino 5 has not been updated since a long time, and almost no traffic is handled by this system anymore, which caused its operation to become uneconomic. '
-    htmlBody += '<br/>Below please find a report of the ShapeDiver models owned by your account which are still operated on this system. '
-    htmlBody += 'You can download your Grasshopper models from the ShapeDiver platform. Please follow the links to your models included below. We kindly ask you to do so before 31st August 2023. '
-    htmlBody += '<br/>Uploading your Rhino 5 models to one of the new ShapeDiver Geometry Backend systems should typically work flawlessly, although this is not guaranteed due to subtle differences in the behavior of Grasshopper. '
+    htmlBody += 'Rhino 5 has not been updated since a long time, and almost no traffic is handled by this system anymore, which causes its operation to become uneconomic. '
+    htmlBody += '<br/>Below please find a list of the ShapeDiver models owned by your account which are still operated on this system. '
+    htmlBody += `You can also list those models in your ${linkHtml("https://www.shapediver.com/app/library?searchPhrase=https%3A%2F%2Fsduse1.us-east-1.shapediver.com", "Library")} by searching for the model view URL "https://sduse1.us-east-1.shapediver.com". `
+    htmlBody += '<br/>You can download your Grasshopper models from the ShapeDiver platform. If you wish to do so, we kindly ask you to download the models before 31st August 2023. '
+    htmlBody += '<br/>Uploading your Rhino 5 models to one of the new ShapeDiver Geometry Backend systems (Rhino 6 or 7) should work flawlessly, although this is not guaranteed due to subtle differences in the behavior of Grasshopper. '
     htmlBody += '<br/>Your models hosted on the Rhino 5 Geometry Backend system will disappear from your dashboard on 1st of September 2023. '
     htmlBody += `<br/>Should you have any questions, please contact us via our ${linkHtml("https://forum.shapediver.com", "forum")}. `
     
