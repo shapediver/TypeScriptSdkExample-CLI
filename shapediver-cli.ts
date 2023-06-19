@@ -10,6 +10,7 @@ import {
     displayModelsByModelViewUrl, 
     displayUserCreditUsage, 
     fetchModelAnalytics, 
+    notifyUsersAboutDecommissioning, 
     notifyUsersPlatform, 
     publishModel, 
     sdTFExample, 
@@ -121,6 +122,21 @@ yargs(process.argv.slice(2))
             await fetchModelAnalytics(
                 argv.f, 
                 argv.t
+            );
+        },
+    )
+    .command(
+        "notify-of-decommissioning",
+        "Notify users about decommissioning of models",
+        (yargs) => {
+            yargs
+                .options({
+                    
+                })
+        },
+        async () => {
+            await notifyUsersAboutDecommissioning(
+              
             );
         },
     )

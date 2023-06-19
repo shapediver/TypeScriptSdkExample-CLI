@@ -144,6 +144,107 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
     }
 }
 
+/** 
+ * Notify users about decommissioning of the Rhino 5 geometry backend system, based on data exported by
+ * displayModelsByModelViewUrl and fetchModelAnalytics
+ */
+export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
+
+    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(analyticsExportFilename, { encoding: 'utf8'}))
+
+    //const sdk = await initPlatformSdk()
+
+    const htmlEscape = (str: string) => str
+            .replace('–','-')
+            .replace(/&/g, '&amp')
+            .replace(/'/g, '&apos')
+            .replace(/"/g, '&quot')
+            .replace(/>/g, '&gt')   
+            .replace(/</g, '&lt')
+    
+    const headingHtml = (level: number, heading: string) => `<h${level}>${htmlEscape(heading)}</h${level}>`
+    const linkHtml = (url: string, text: string) => `<a href="${url}" target="_blank">${htmlEscape(text)}</a>`
+
+    const htmlHeader = '<head><title>ShapeDiver - Rhino 5 Geometry Backend Decommissioning</title></head>'
+    let htmlBody = headingHtml(1, "ShapeDiver - Rhino 5 Geometry Backend Decommissioning")
+    htmlBody += 'After almost 7 years of operating a ShapeDiver Geometry Backend system based on Rhino 5, we are planning to decommission it on 31st August 2023. '
+    htmlBody += 'Rhino 5 has not been updated since a long time, and almost no traffic is handled by this system anymore, which caused its operation to become uneconomic. '
+    htmlBody += '<br/>Below please find a report of the ShapeDiver models owned by your account which are still operated on this system. '
+    htmlBody += 'You can download your Grasshopper models from the ShapeDiver platform. Please follow the links to your models included below. We kindly ask you to do so before 31st August 2023. '
+    htmlBody += '<br/>Uploading your Rhino 5 models to one of the new ShapeDiver Geometry Backend systems should typically work flawlessly, although this is not guaranteed due to subtle differences in the behavior of Grasshopper. '
+    htmlBody += '<br/>Your models hosted on the Rhino 5 Geometry Backend system will disappear from your dashboard on 1st of September 2023. '
+    htmlBody += `<br/>Should you have any questions, please contact us via our ${linkHtml("https://forum.shapediver.com", "forum")}. `
+    
+    const listModelsHtml = (heading: string, models: IModelInfo[], type?: string) : string => {
+        let html = ''
+        html += headingHtml(4, heading)
+        models.map(m => {
+            html += "Title: " + linkHtml(`https://shapediver.com/app/m/${m.slug}`, m.title) + `, slug: ${m.slug}`
+            if (type)
+                html += `, usage count: ${m.analytics.sessions[type]}`
+            html += "<br/>"
+        })
+        return html
+    }
+
+    for (const user_id in modelsPerUser ) {
+
+        const email = modelsPerUser[user_id].email
+
+        let htmlUser = headingHtml(2, `User ${email}`)
+        htmlUser += `User id: ${user_id}`
+        
+        const modelsApp = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.app > 0)
+        const modelsBackend = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.backend > 0)
+        const modelsDesktop = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.desktop > 0)
+        const modelsEmbedded = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.embedded > 0)
+
+        if (modelsApp.length > 0 || modelsBackend.length > 0 || modelsDesktop.length > 0 || modelsEmbedded.length > 0) {
+            
+            console.log(`User ${user_id}, ${email}`)
+
+            htmlUser += headingHtml(3, "Models accessed in the past two months")
+            htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past two months. The usage count shows how many sessions have been opened. '
+
+            if (modelsApp.length > 0) {
+                htmlUser += listModelsHtml('Access via platform', modelsApp, "app")
+            }
+            if (modelsBackend.length > 0) {
+                htmlUser += listModelsHtml('Access via backend API', modelsBackend, "backend")
+            }
+            if (modelsDesktop.length > 0) {
+                htmlUser += listModelsHtml('Access from desktop clients', modelsDesktop, "desktop")
+            }
+            if (modelsEmbedded.length > 0) {
+                htmlUser += listModelsHtml('Access from embedding', modelsEmbedded, "embedded")
+            }
+
+            /*
+            if ( email === 'alex+eu-central-1@shapediver.com') {
+
+                await createNotificationOfDecommissioning(sdk, user_id, message)
+
+            }
+            */
+        }
+
+        htmlUser += headingHtml(3, "All models")
+        if ( modelsPerUser[user_id].done.length > 0 )
+            htmlUser += listModelsHtml('Status "done"', modelsPerUser[user_id].done)
+        if ( modelsPerUser[user_id].confirmed.length > 0 )
+            htmlUser += listModelsHtml('Status "confirmed"', modelsPerUser[user_id].confirmed)
+        if ( modelsPerUser[user_id].pending.length > 0 )
+            htmlUser += listModelsHtml('Status "pending"', modelsPerUser[user_id].pending)
+
+        const html = `<!DOCTYPE html>${htmlHeader}<body>${htmlBody}${htmlUser}</body`
+
+        if ( email === 'alex+eu-central-1@shapediver.com') {
+            await fsp.writeFile(`${user_id}.html`, html)
+        }
+    }
+
+}
+
 export const displayModelInfoPlatform = async (identifier: string): Promise<void> =>
 {
 
