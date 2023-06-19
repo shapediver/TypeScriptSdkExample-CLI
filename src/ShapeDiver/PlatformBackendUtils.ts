@@ -91,6 +91,24 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
 };
 
 /**
+ * Fetch a token for accessing the analytics of a model. 
+ * @param sdk Authenticated instance of the Platform Backend SDK
+ * @param guid id of the model on the Geometry Backend
+ * @returns 
+ */
+export const getAnalyticsAccessData = async (sdk: SdPlatformSdk, guid: string): Promise<IGeometryBackendAccessData> => 
+{
+  const scopes = [SdPlatformModelTokenScopes.GroupAnalytics]
+  const tokenData = (await sdk.modelTokens.create({ id: guid, scope: scopes })).data;
+  return {
+    access_token: tokenData.access_token,
+    model_view_url: tokenData.model_view_url,
+    guid,
+    scopes
+  }
+} 
+
+/**
  * Get information about a model. Makes two request to the platform backend, to decide which information to embed.
  * 
  * @param sdk 
@@ -158,6 +176,13 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
   return models;
 }
 
+/**
+ * Query all models matching the given filter 
+ * @param sdk 
+ * @param filters 
+ * @param callback 
+ * @returns 
+ */
 export const queryAllMatchingModels = async (sdk: SdPlatformSdk, filters: any, 
   callback: (model: SdPlatformResponseModelOwner) => Promise<void>
   ): Promise<SdPlatformResponseModelOwner[]> =>

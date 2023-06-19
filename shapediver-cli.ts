@@ -9,6 +9,7 @@ import {
     displayModelInfoPlatform, 
     displayModelsByModelViewUrl, 
     displayUserCreditUsage, 
+    fetchModelAnalytics, 
     notifyUsersPlatform, 
     publishModel, 
     sdTFExample, 
@@ -78,7 +79,7 @@ yargs(process.argv.slice(2))
     )
     .command(
         "list-models-by-backend",
-        "Query and display models by backend system",
+        "Query and export models by backend system",
         (yargs) => {
             yargs
                 .options({
@@ -93,6 +94,33 @@ yargs(process.argv.slice(2))
         async (argv) => {
             await displayModelsByModelViewUrl(
                 argv.m
+            );
+        },
+    )
+    .command(
+        "fetch-model-analytics",
+        "Fetch analytics for exported models",
+        (yargs) => {
+            yargs
+                .options({
+                    f: {
+                        alias: "timestamp-from",
+                        description: "Timestamp in format YYYY or YYYYMM or YYYYMMDD or YYYYMMDDhh",
+                        type: 'string',
+                        demandOption: true,
+                    },
+                    t: {
+                        alias: "timestamp-to",
+                        description: "Timestamp in format YYYY or YYYYMM or YYYYMMDD or YYYYMMDDhh",
+                        type: 'string',
+                        demandOption: true,
+                    }
+                })
+        },
+        async (argv) => {
+            await fetchModelAnalytics(
+                argv.f, 
+                argv.t
             );
         },
     )

@@ -1,6 +1,7 @@
-import { initSession, ISessionData, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
+import { getSessionAnalytics, initSession, ISessionData, uploadModel, waitForModelCheck } from "./GeometryBackendUtils";
 import { 
     createModel, 
+    getAnalyticsAccessData, 
     getModelAccessData, 
     getModelInfo, 
     initPlatformSdk, 
@@ -40,46 +41,93 @@ export const displayLatestModels = async (limit: number, own: boolean): Promise<
     console.log(models);
 }
 
-interface IModelsPerUser {
-    [key: string]: {
-        id: string,
-        slug: string,
-        title: string
-    }[]
+interface IModelInfo {
+    id: string,
+    guid: string,
+    slug: string,
+    title: string,
+    analytics: {
+        timestamp_from: string,
+        timestamp_to: string,
+        sessions: {
+            app: number,
+            backend: number,
+            desktop: number,
+            embedded: number, 
+        }
+    }
 }
+
+interface IModelsPerStatus {
+    done: IModelInfo[],
+    confirmed: IModelInfo[],
+    pending: IModelInfo[],
+    email: string
+}
+
+interface IModelsPerUser {
+    [key: string]: IModelsPerStatus
+}
+
+const analyticsExportFilename = 'modelsPerUser.json'
 
 export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise<void> => 
 {
-    const sdk = await initPlatformSdk();
+    const sdk = await initPlatformSdk()
 
     const filters = {
         'backend_system.model_view_url[=]': modelViewUrl,
-        'status[,]': ['pending', 'confirmed', 'done']
+        'status[,]': ['pending', 'confirmed', 'done'],
+        'deleted_at[?]': null,
     }
 
-    const modelsPerUser : { [key: string]: IModelsPerUser | { email: string } } = {}
+    const modelsPerUser : IModelsPerUser = {}
 
     console.log('Model id;User id;Status;Slug;Title')
-    await queryAllMatchingModels(sdk, filters, async ({id, user, slug, status, title}) => {
+    await queryAllMatchingModels(sdk, filters, async ({id, guid, user, slug, status, title}) => {
         //console.log(`${id};${user.id};${status};${slug};${title}`)
         if ( !modelsPerUser[user.id] ) { 
-
-            modelsPerUser[user.id] = {}
-
-            modelsPerUser[user.id]['pending'] = []
-            modelsPerUser[user.id]['confirmed'] = []
-            modelsPerUser[user.id]['done'] = []
-
             const u = await sdk.users.get<SdPlatformResponseUserPublic>(user.id)
-            modelsPerUser[user.id].email = u.data.email
+            modelsPerUser[user.id] = { pending: [], confirmed: [], done: [], email: u.data.email }
             console.log(u.data.email)
         }
         modelsPerUser[user.id][status].splice(
-            modelsPerUser[user.id][status].length, 0, {id, slug, title}
+            modelsPerUser[user.id][status].length, 0, {id, guid, slug, title}
         )
     })
 
-    await await fsp.writeFile('modelsPerUser.json', JSON.stringify(modelsPerUser))
+    await fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
+}
+
+export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: string): Promise<void> => {
+
+    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(analyticsExportFilename, { encoding: 'utf8'}))
+
+    const sdk = await initPlatformSdk()
+
+    for (const user_id in modelsPerUser) {
+        for (const model of modelsPerUser[user_id].done) {
+            if ( !model.analytics ) {
+                const data = await getAnalyticsAccessData(sdk, model.guid)
+                const dto = await getSessionAnalytics(data, timestamp_from, timestamp_to)
+                const modelData = dto.analytics.models[0]
+                model.analytics = {
+                    timestamp_from, 
+                    timestamp_to,
+                    sessions: {
+                        app: modelData.app.count,
+                        backend: modelData.backend.count,
+                        desktop: modelData.desktop.count,
+                        embedded: modelData.embedded.count
+                    }
+                }
+                console.log(model.guid, model.analytics)
+
+                fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
+            }
+        }
+    }
+
 }
 
 export const displayModelInfoPlatform = async (identifier: string): Promise<void> =>

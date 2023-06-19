@@ -160,3 +160,15 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
         dto
     };
 }
+
+export const getSessionAnalytics = async (access_data: IGeometryBackendAccessData, timestamp_from: string, timestamp_to: string) : Promise<ShapeDiverResponseDto> => {
+    const sdk = create(access_data.model_view_url, access_data.access_token);
+    const dto = await sdk.analytics.modelSessionStatistics({
+        parameters: [{
+            modelid: access_data.guid,
+            timestamp_from,
+            timestamp_to
+        }]
+    })
+    return dto
+}
