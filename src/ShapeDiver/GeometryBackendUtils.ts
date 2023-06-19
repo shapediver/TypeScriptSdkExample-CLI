@@ -161,14 +161,27 @@ export const waitForModelCheck = async (session_data: ISessionData) : Promise<IS
     };
 }
 
+/**
+ * Helper for getting aggregated session analytics for the given model (or models)
+ * @param access_data 
+ * @param timestamp_from 
+ * @param timestamp_to 
+ * @returns 
+ */
 export const getSessionAnalytics = async (access_data: IGeometryBackendAccessData, timestamp_from: string, timestamp_to: string) : Promise<ShapeDiverResponseDto> => {
     const sdk = create(access_data.model_view_url, access_data.access_token);
     const dto = await sdk.analytics.modelSessionStatistics({
-        parameters: [{
-            modelid: access_data.guid,
-            timestamp_from,
-            timestamp_to
-        }]
+        parameters: access_data.guid ? 
+            [{
+                modelid: access_data.guid,
+                timestamp_from,
+                timestamp_to
+            }] :
+            access_data.guids.map(g => { return {
+                modelid: g,
+                timestamp_from,
+                timestamp_to
+            };})
     })
     return dto
 }

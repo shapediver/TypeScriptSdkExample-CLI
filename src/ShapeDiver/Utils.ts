@@ -23,6 +23,12 @@ import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUti
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
 import { ShapeDiverSdkApiResponseType } from "@shapediver/sdk.geometry-api-sdk-v2";
 
+function* chunks<T>(arr: T[], n: number): Generator<T[], void> {
+    for (let i = 0; i < arr.length; i += n) {
+        yield arr.slice(i, i + n);
+    }
+}
+
 export const displayModelAccessData = async (identifier: string, allowExports: boolean, backend: boolean): Promise<void> =>
 {
 
@@ -41,6 +47,7 @@ export const displayLatestModels = async (limit: number, own: boolean): Promise<
     console.log(models);
 }
 
+/** Model info, for json export */
 interface IModelInfo {
     id: string,
     guid: string,
@@ -58,19 +65,23 @@ interface IModelInfo {
     }
 }
 
-interface IModelsPerStatus {
+/** Model info per user, for json export  */
+interface IModelInfoPerUser {
     done: IModelInfo[],
     confirmed: IModelInfo[],
     pending: IModelInfo[],
     email: string
 }
 
+/** Map from user id to model data, for json export */
 interface IModelsPerUser {
-    [key: string]: IModelsPerStatus
+    [key: string]: IModelInfoPerUser
 }
 
+/** Filename for json export */
 const analyticsExportFilename = 'modelsPerUser.json'
 
+/** Query model by model view URL and export them */
 export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise<void> => 
 {
     const sdk = await initPlatformSdk()
@@ -85,7 +96,6 @@ export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise
 
     console.log('Model id;User id;Status;Slug;Title')
     await queryAllMatchingModels(sdk, filters, async ({id, guid, user, slug, status, title}) => {
-        //console.log(`${id};${user.id};${status};${slug};${title}`)
         if ( !modelsPerUser[user.id] ) { 
             const u = await sdk.users.get<SdPlatformResponseUserPublic>(user.id)
             modelsPerUser[user.id] = { pending: [], confirmed: [], done: [], email: u.data.email }
@@ -99,6 +109,7 @@ export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise
     await fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
 }
 
+/** Fetch analytics for previously exported models */
 export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: string): Promise<void> => {
 
     const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(analyticsExportFilename, { encoding: 'utf8'}))
@@ -106,11 +117,16 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
     const sdk = await initPlatformSdk()
 
     for (const user_id in modelsPerUser) {
-        for (const model of modelsPerUser[user_id].done) {
-            if ( !model.analytics ) {
-                const data = await getAnalyticsAccessData(sdk, model.guid)
-                const dto = await getSessionAnalytics(data, timestamp_from, timestamp_to)
-                const modelData = dto.analytics.models[0]
+        const models = modelsPerUser[user_id].done
+            .filter( m => !m.analytics || m.analytics.timestamp_from !== timestamp_from || m.analytics.timestamp_to !== timestamp_to )
+        const modelChunks = chunks<IModelInfo>(models, 50)
+        
+        for ( const chunk of modelChunks ) {
+            const data = await getAnalyticsAccessData(sdk, chunk.map(c => c.id), chunk.map(c => c.guid))
+            const dto = await getSessionAnalytics(data, timestamp_from, timestamp_to)
+            let i = 0
+            for ( const model of chunk ) {
+                const modelData = dto.analytics.models[i++]
                 model.analytics = {
                     timestamp_from, 
                     timestamp_to,
@@ -122,12 +138,10 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
                     }
                 }
                 console.log(model.guid, model.analytics)
-
-                fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
             }
+            fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
         }
     }
-
 }
 
 export const displayModelInfoPlatform = async (identifier: string): Promise<void> =>

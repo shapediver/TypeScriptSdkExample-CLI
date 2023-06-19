@@ -93,19 +93,30 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
 /**
  * Fetch a token for accessing the analytics of a model. 
  * @param sdk Authenticated instance of the Platform Backend SDK
- * @param guid id of the model on the Geometry Backend
+ * @param id id of the model
  * @returns 
  */
-export const getAnalyticsAccessData = async (sdk: SdPlatformSdk, guid: string): Promise<IGeometryBackendAccessData> => 
+export const getAnalyticsAccessData = async (sdk: SdPlatformSdk, id: string | string[], guid: string | string[]): Promise<IGeometryBackendAccessData> => 
 {
-  const scopes = [SdPlatformModelTokenScopes.GroupAnalytics]
-  const tokenData = (await sdk.modelTokens.create({ id: guid, scope: scopes })).data;
-  return {
-    access_token: tokenData.access_token,
-    model_view_url: tokenData.model_view_url,
-    guid,
-    scopes
-  }
+  const scope = [SdPlatformModelTokenScopes.GroupAnalytics]
+  const tokenData = Array.isArray(id) ? 
+    (await sdk.modelTokens.create({ ids: id, scope })).data :
+    (await sdk.modelTokens.create({ id, scope })).data
+
+  if (Array.isArray(guid)) 
+    return {
+      access_token: tokenData.access_token,
+      model_view_url: tokenData.model_view_url,
+      guids: guid,
+      scopes: scope
+    }
+  else
+    return {
+      access_token: tokenData.access_token,
+      model_view_url: tokenData.model_view_url,
+      guid: guid,
+      scopes: scope
+    }
 } 
 
 /**
