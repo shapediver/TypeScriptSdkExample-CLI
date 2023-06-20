@@ -17,7 +17,8 @@ import {
 import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { exec } from 'child_process';
+import { SdPlatformModelStatus, SdPlatformNotificationClass, SdPlatformNotificationCreator, SdPlatformNotificationLevel, SdPlatformNotificationType, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
 import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
@@ -82,7 +83,7 @@ interface IModelsPerUser {
 const analyticsExportFilename = 'modelsPerUser.json'
 
 /** Query model by model view URL and export them */
-export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise<void> => 
+export const displayModelsByModelViewUrl = async (modelViewUrl: string, filename?: string): Promise<void> => 
 {
     const sdk = await initPlatformSdk()
 
@@ -106,13 +107,13 @@ export const displayModelsByModelViewUrl = async (modelViewUrl: string): Promise
         )
     })
 
-    await fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
+    await fsp.writeFile(filename ?? analyticsExportFilename, JSON.stringify(modelsPerUser))
 }
 
 /** Fetch analytics for previously exported models */
-export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: string): Promise<void> => {
+export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: string, filename?: string): Promise<void> => {
 
-    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(analyticsExportFilename, { encoding: 'utf8'}))
+    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(filename ?? analyticsExportFilename, { encoding: 'utf8'}))
 
     const sdk = await initPlatformSdk()
 
@@ -139,7 +140,7 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
                 }
                 console.log(model.guid, model.analytics)
             }
-            fsp.writeFile(analyticsExportFilename, JSON.stringify(modelsPerUser))
+            fsp.writeFile(filename ?? analyticsExportFilename, JSON.stringify(modelsPerUser))
         }
     }
 }
@@ -148,11 +149,13 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
  * Notify users about decommissioning of the Rhino 5 geometry backend system, based on data exported by
  * displayModelsByModelViewUrl and fetchModelAnalytics
  */
-export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
+export const notifyUsersAboutDecommissioning = async (filename?: string): Promise<void> => {
 
-    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(analyticsExportFilename, { encoding: 'utf8'}))
+    const createNotifications = false
 
-    //const sdk = await initPlatformSdk()
+    const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(filename ?? analyticsExportFilename, { encoding: 'utf8'}))
+
+    const sdk = await initPlatformSdk()
 
     const htmlEscape = (str: string) => str
             .replace('–','-')
@@ -167,13 +170,13 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
 
     const htmlHeader = '<head><title>ShapeDiver - Rhino 5 Geometry Backend Decommissioning</title></head>'
     let htmlBody = headingHtml(1, "ShapeDiver - Rhino 5 Geometry Backend Decommissioning")
-    htmlBody += 'After almost 7 years of operating a ShapeDiver Geometry Backend system based on Rhino 5, we are planning to decommission it on 31st August 2023. '
+    htmlBody += 'After almost 7 years of operating a ShapeDiver Geometry Backend system based on Rhino 5, we are planning to decommission it on 31 August 2023 (2023/08/31). '
     htmlBody += 'Rhino 5 has not been updated since a long time, and almost no traffic is handled by this system anymore, which causes its operation to become uneconomic. '
     htmlBody += '<br/>Below please find a list of the ShapeDiver models owned by your account which are still operated on this system. '
-    htmlBody += `You can also list those models in your ${linkHtml("https://www.shapediver.com/app/library?searchPhrase=https%3A%2F%2Fsduse1.us-east-1.shapediver.com", "Library")} by searching for the model view URL "https://sduse1.us-east-1.shapediver.com". `
-    htmlBody += '<br/>You can download your Grasshopper models from the ShapeDiver platform. If you wish to do so, we kindly ask you to download the models before 31st August 2023. '
-    htmlBody += '<br/>Uploading your Rhino 5 models to one of the new ShapeDiver Geometry Backend systems (Rhino 6 or 7) should work flawlessly, although this is not guaranteed due to subtle differences in the behavior of Grasshopper. '
-    htmlBody += '<br/>Your models hosted on the Rhino 5 Geometry Backend system will disappear from your dashboard on 1st of September 2023. '
+    htmlBody += `You can also list those models in your ${linkHtml("https://www.shapediver.com/app/library?searchPhrase=https%3A%2F%2Fsduse1.us-east-1.shapediver.com", "Library")} by searching for the model view URL <i>https://sduse1.us-east-1.shapediver.com</i>. `
+    htmlBody += `<br/>If you wish to do so, please ${linkHtml("https://help.shapediver.com/doc/model-library#Modellibrary-DownloadGrasshopperfilesagain", "download the corresponding Grasshopper models from the ShapeDiver platform")} before 31 August 2023 (2023/08/31). `
+    htmlBody += '<br/>Uploading your Grasshopper models to one of the new ShapeDiver Geometry Backend systems (operated using Rhino 6 or 7) will work flawlessly in many cases, although this is not guaranteed due to subtle differences in the behavior of Grasshopper. '
+    htmlBody += '<br/>Your models hosted on the Rhino 5 Geometry Backend system will disappear from your dashboard on 1 September 2023 (2023/09/01). '
     htmlBody += `<br/>Should you have any questions, please contact us via our ${linkHtml("https://forum.shapediver.com", "forum")}. `
     
     const listModelsHtml = (heading: string, models: IModelInfo[], type?: string) : string => {
@@ -188,6 +191,37 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
         return html
     }
 
+    const execAsync = async (cmd: string): Promise<{stdout: string, stderr: string}> => {
+        return new Promise((resolve, reject) => {
+            exec(cmd, (error, stdout, stderr) => {
+                if (error) {
+                    reject(error)
+                }
+                else
+                {
+                    resolve({stdout, stderr})
+                }
+            })
+        })
+    }
+
+    const createNotification = async (user_id: string, href: string): Promise<void> => {
+
+        if (!createNotifications)
+            return
+
+        await sdk.notifications.create({
+          creator: SdPlatformNotificationCreator.Platform,
+          level: SdPlatformNotificationLevel.Warning,
+          class: SdPlatformNotificationClass.Account,
+          type: SdPlatformNotificationType.GeometryBackendUpdate,
+          description: 'Rhino 5 decommissioning - Click for more information',
+          receiver_id: user_id,
+          href
+        });
+      
+    }
+
     for (const user_id in modelsPerUser ) {
 
         const email = modelsPerUser[user_id].email
@@ -200,11 +234,10 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
         const modelsDesktop = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.desktop > 0)
         const modelsEmbedded = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.embedded > 0)
 
+        htmlUser += headingHtml(3, "Models accessed in the past two months")
+       
         if (modelsApp.length > 0 || modelsBackend.length > 0 || modelsDesktop.length > 0 || modelsEmbedded.length > 0) {
             
-            console.log(`User ${user_id}, ${email}`)
-
-            htmlUser += headingHtml(3, "Models accessed in the past two months")
             htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past two months. The usage count shows how many sessions have been opened. '
 
             if (modelsApp.length > 0) {
@@ -220,13 +253,10 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
                 htmlUser += listModelsHtml('Access from embedding', modelsEmbedded, "embedded")
             }
 
-            /*
-            if ( email === 'alex+eu-central-1@shapediver.com') {
-
-                await createNotificationOfDecommissioning(sdk, user_id, message)
-
-            }
-            */
+        }
+        else
+        {
+            htmlUser += 'None of your models hosted on the Rhino 5 Geometry Backend system have been accessed in the past two months.'
         }
 
         htmlUser += headingHtml(3, "All models")
@@ -239,9 +269,16 @@ export const notifyUsersAboutDecommissioning = async (): Promise<void> => {
 
         const html = `<!DOCTYPE html>${htmlHeader}<body>${htmlBody}${htmlUser}</body`
 
-        if ( email === 'alex+eu-central-1@shapediver.com') {
-            await fsp.writeFile(`${user_id}.html`, html)
-        }
+        const fn = `${user_id}.html`
+
+        await fsp.writeFile(fn, html)
+        await execAsync(`aws s3 cp ${fn} s3://shapediverdownloads/rhino5-decommissioning/${fn}`)
+        await fsp.unlink(fn)
+
+        const href = `https://downloads.shapediver.com/rhino5-decommissioning/${fn}`
+        console.log(`User ${user_id}, ${email}, ${href}`)
+        await createNotification(user_id, href)
+    
     }
 
 }
@@ -250,6 +287,7 @@ export const displayModelInfoPlatform = async (identifier: string): Promise<void
 {
 
     const sdk = await initPlatformSdk();
+
     const result = await getModelInfo(sdk, identifier);
 
     console.log(result);

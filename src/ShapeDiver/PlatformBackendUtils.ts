@@ -534,18 +534,3 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 
   return users_notified;
 }
-
-export const createNotificationOfDecommissioning = async (sdk: SdPlatformSdk, user_id: string, message: string): Promise<void> => {
-
-  await sdk.notifications.create({
-    creator: SdPlatformNotificationCreator.Platform,
-    level: SdPlatformNotificationLevel.Info,
-    class: SdPlatformNotificationClass.Account,
-    type: SdPlatformNotificationType.GeometryBackendUpdate,
-    description: message,
-    receiver_id: user_id,
-    //href: notification_options.href
-  });
-
-}
-

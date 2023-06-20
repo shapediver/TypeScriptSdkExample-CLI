@@ -80,7 +80,7 @@ yargs(process.argv.slice(2))
     )
     .command(
         "list-models-by-backend",
-        "Query and export models by backend system",
+        "Query models by backend system and export them",
         (yargs) => {
             yargs
                 .options({
@@ -89,18 +89,24 @@ yargs(process.argv.slice(2))
                         description: "The model view URL to search models by",
                         type: 'string',
                         demandOption: true,
+                    },
+                    j: {
+                        alias: "filename",
+                        description: "The filename to export to (json)",
+                        type: 'string',
                     }
                 })
         },
         async (argv) => {
             await displayModelsByModelViewUrl(
-                argv.m
+                argv.m,
+                argv.j
             );
         },
     )
     .command(
         "fetch-model-analytics",
-        "Fetch analytics for exported models",
+        "Fetch analytics for previously exported models",
         (yargs) => {
             yargs
                 .options({
@@ -115,13 +121,19 @@ yargs(process.argv.slice(2))
                         description: "Timestamp in format YYYY or YYYYMM or YYYYMMDD or YYYYMMDDhh",
                         type: 'string',
                         demandOption: true,
+                    },
+                    j: {
+                        alias: "filename",
+                        description: "The filename to read and write to (json)",
+                        type: 'string',
                     }
                 })
         },
         async (argv) => {
             await fetchModelAnalytics(
                 argv.f, 
-                argv.t
+                argv.t,
+                argv.j
             );
         },
     )
@@ -131,12 +143,16 @@ yargs(process.argv.slice(2))
         (yargs) => {
             yargs
                 .options({
-                    
+                    j: {
+                        alias: "filename",
+                        description: "The filename to read and write to (json)",
+                        type: 'string',
+                    }
                 })
         },
-        async () => {
+        async (argv) => {
             await notifyUsersAboutDecommissioning(
-              
+                argv.j
             );
         },
     )
