@@ -174,7 +174,7 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
  */
 export const notifyUsersAboutDecommissioning = async (filename?: string): Promise<void> => {
 
-    const createNotifications = false
+    const createNotifications = true
 
     const modelsPerUser : IModelsPerUser = JSON.parse(await fsp.readFile(filename ?? analyticsExportFilename, { encoding: 'utf8'}))
 
