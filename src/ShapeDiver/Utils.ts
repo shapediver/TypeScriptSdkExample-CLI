@@ -18,7 +18,7 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { SdPlatformModelStatus, SdPlatformNotificationClass, SdPlatformNotificationCreator, SdPlatformNotificationLevel, SdPlatformNotificationType, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformNotificationClass, SdPlatformNotificationCreator, SdPlatformNotificationLevel, SdPlatformNotificationType, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseModelAdmin, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk, SdPlatformValidationResponseError } from "@shapediver/sdk.platform-api-sdk-v1";
 import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
@@ -123,10 +123,33 @@ export const fetchModelAnalytics = async (timestamp_from: string, timestamp_to: 
         const modelChunks = chunks<IModelInfo>(models, 50)
         
         for ( const chunk of modelChunks ) {
-            const data = await getAnalyticsAccessData(sdk, chunk.map(c => c.id), chunk.map(c => c.guid))
+
+            const filteredChunk : IModelInfo[] = []
+            for (const m of chunk) {
+                try {
+                    const data = (await sdk.models.get<SdPlatformResponseModelAdmin>(m.id)).data
+                    if (!data.deleted_at)
+                        filteredChunk.push(m)
+                    else
+                        console.log(`Model ${m.id} does not exist anymore.`)
+                }
+                catch (e)
+                {
+                    console.log(e)
+                    if (e instanceof SdPlatformValidationResponseError)
+                        console.log(`Model ${m.id} does not exist anymore.`)
+                    else
+                        throw e
+                }
+            }
+
+            if (filteredChunk.length === 0)
+                continue
+       
+            const data = await getAnalyticsAccessData(sdk, filteredChunk.map(c => c.id), filteredChunk.map(c => c.guid))
             const dto = await getSessionAnalytics(data, timestamp_from, timestamp_to)
             let i = 0
-            for ( const model of chunk ) {
+            for ( const model of filteredChunk ) {
                 const modelData = dto.analytics.models[i++]
                 model.analytics = {
                     timestamp_from, 
@@ -234,11 +257,11 @@ export const notifyUsersAboutDecommissioning = async (filename?: string): Promis
         const modelsDesktop = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.desktop > 0)
         const modelsEmbedded = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.embedded > 0)
 
-        htmlUser += headingHtml(3, "Models accessed in the past two months")
+        htmlUser += headingHtml(3, "Models accessed in the past three months")
        
         if (modelsApp.length > 0 || modelsBackend.length > 0 || modelsDesktop.length > 0 || modelsEmbedded.length > 0) {
             
-            htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past two months. The usage count shows how many sessions have been opened. '
+            htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past three months. The usage count shows how many sessions have been opened. '
 
             if (modelsApp.length > 0) {
                 htmlUser += listModelsHtml('Access via platform', modelsApp, "app")
@@ -256,7 +279,7 @@ export const notifyUsersAboutDecommissioning = async (filename?: string): Promis
         }
         else
         {
-            htmlUser += 'None of your models hosted on the Rhino 5 Geometry Backend system have been accessed in the past two months.'
+            htmlUser += 'None of your models hosted on the Rhino 5 Geometry Backend system have been accessed in the past three months.'
         }
 
         htmlUser += headingHtml(3, "All models")
