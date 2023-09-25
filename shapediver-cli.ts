@@ -7,7 +7,10 @@ import {
     displayModelAccessData, 
     displayModelInfoGeometry, 
     displayModelInfoPlatform, 
+    displayModelsByModelViewUrl, 
     displayUserCreditUsage, 
+    fetchModelAnalytics, 
+    notifyUsersAboutDecommissioning, 
     notifyUsersPlatform, 
     publishModel, 
     sdTFExample, 
@@ -72,6 +75,84 @@ yargs(process.argv.slice(2))
             await displayLatestModels(
                 argv.l ? argv.l as number : 10,
                 typeof argv.o === 'boolean' ? argv.o as boolean : true,
+            );
+        },
+    )
+    .command(
+        "list-models-by-backend",
+        "Query models by backend system and export them",
+        (yargs) => {
+            yargs
+                .options({
+                    m: {
+                        alias: "model-view-url",
+                        description: "The model view URL to search models by",
+                        type: 'string',
+                        demandOption: true,
+                    },
+                    j: {
+                        alias: "filename",
+                        description: "The filename to export to (json)",
+                        type: 'string',
+                    }
+                })
+        },
+        async (argv) => {
+            await displayModelsByModelViewUrl(
+                argv.m,
+                argv.j
+            );
+        },
+    )
+    .command(
+        "fetch-model-analytics",
+        "Fetch analytics for previously exported models",
+        (yargs) => {
+            yargs
+                .options({
+                    f: {
+                        alias: "timestamp-from",
+                        description: "Timestamp in format YYYY or YYYYMM or YYYYMMDD or YYYYMMDDhh",
+                        type: 'string',
+                        demandOption: true,
+                    },
+                    t: {
+                        alias: "timestamp-to",
+                        description: "Timestamp in format YYYY or YYYYMM or YYYYMMDD or YYYYMMDDhh",
+                        type: 'string',
+                        demandOption: true,
+                    },
+                    j: {
+                        alias: "filename",
+                        description: "The filename to read and write to (json)",
+                        type: 'string',
+                    }
+                })
+        },
+        async (argv) => {
+            await fetchModelAnalytics(
+                argv.f, 
+                argv.t,
+                argv.j
+            );
+        },
+    )
+    .command(
+        "notify-of-decommissioning",
+        "Notify users about decommissioning of models",
+        (yargs) => {
+            yargs
+                .options({
+                    j: {
+                        alias: "filename",
+                        description: "The filename to read and write to (json)",
+                        type: 'string',
+                    }
+                })
+        },
+        async (argv) => {
+            await notifyUsersAboutDecommissioning(
+                argv.j
             );
         },
     )

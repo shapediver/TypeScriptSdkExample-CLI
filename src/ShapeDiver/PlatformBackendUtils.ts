@@ -91,6 +91,35 @@ export const getModelAccessData = async (sdk: SdPlatformSdk, identifier: string,
 };
 
 /**
+ * Fetch a token for accessing the analytics of a model. 
+ * @param sdk Authenticated instance of the Platform Backend SDK
+ * @param id id of the model
+ * @returns 
+ */
+export const getAnalyticsAccessData = async (sdk: SdPlatformSdk, id: string | string[], guid: string | string[]): Promise<IGeometryBackendAccessData> => 
+{
+  const scope = [SdPlatformModelTokenScopes.GroupAnalytics]
+  const tokenData = Array.isArray(id) ? 
+    (await sdk.modelTokens.create({ ids: id, scope })).data :
+    (await sdk.modelTokens.create({ id, scope })).data
+
+  if (Array.isArray(guid)) 
+    return {
+      access_token: tokenData.access_token,
+      model_view_url: tokenData.model_view_url,
+      guids: guid,
+      scopes: scope
+    }
+  else
+    return {
+      access_token: tokenData.access_token,
+      model_view_url: tokenData.model_view_url,
+      guid: guid,
+      scopes: scope
+    }
+} 
+
+/**
  * Get information about a model. Makes two request to the platform backend, to decide which information to embed.
  * 
  * @param sdk 
@@ -154,6 +183,45 @@ export const listLatestModels = async (sdk: SdPlatformSdk, limit: number, own: b
     embed: [SdPlatformModelQueryEmbeddableFields.User],
     strict_limit: true
   })).data.result;
+
+  return models;
+}
+
+/**
+ * Query all models matching the given filter 
+ * @param sdk 
+ * @param filters 
+ * @param callback 
+ * @returns 
+ */
+export const queryAllMatchingModels = async (sdk: SdPlatformSdk, filters: any, 
+  callback: (model: SdPlatformResponseModelOwner) => Promise<void>
+  ): Promise<SdPlatformResponseModelOwner[]> =>
+{
+  const models: SdPlatformResponseModelOwner[] = []
+  let offset: string | undefined
+
+  while (true) {
+    const result = (await sdk.models.query<SdPlatformResponseModelOwner>({
+      sorters: { created_at: SdPlatformSortingOrder.Desc },
+      limit: 100,
+      filters,
+      embed: [SdPlatformModelQueryEmbeddableFields.User],
+      strict_limit: false,
+      offset
+    })).data;
+
+    models.splice( models.length, 0, ...result.result)
+    console.log(`Models found: ${models.length}`)
+
+    for (const model of result.result) {
+      await callback(model)
+    } 
+ 
+    if (!result.pagination.next_offset)
+      break
+    offset = result.pagination.next_offset
+  }
 
   return models;
 }
@@ -466,5 +534,3 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
 
   return users_notified;
 }
-
-
