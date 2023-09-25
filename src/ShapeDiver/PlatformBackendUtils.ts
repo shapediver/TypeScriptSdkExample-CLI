@@ -515,7 +515,7 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
             class: SdPlatformNotificationClass.Account,
             type: notification_options.type,
             description: notification_options.description,
-            receiver_id: user.id,
+            receiver_ids: [user.id],
             href: notification_options.href
           });
         }

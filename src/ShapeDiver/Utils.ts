@@ -240,7 +240,7 @@ export const notifyUsersAboutDecommissioning = async (filename?: string): Promis
           class: SdPlatformNotificationClass.Account,
           type: SdPlatformNotificationType.GeometryBackendUpdate,
           description: 'Rhino 5 decommissioning - Click for more information',
-          receiver_id: user_id,
+          receiver_ids: [user_id],
           href
         });
       
