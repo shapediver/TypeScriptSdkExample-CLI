@@ -18,7 +18,8 @@ import * as fsp from 'fs/promises';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { SdPlatformModelStatus, SdPlatformNotificationClass, SdPlatformNotificationCreator, SdPlatformNotificationLevel, SdPlatformNotificationType, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseModelAdmin, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk, SdPlatformValidationResponseError } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformNotificationClass, SdPlatformNotificationCreator, SdPlatformNotificationLevel, SdPlatformNotificationType } from "@shapediver/sdk.platform-api-sdk-v1";
+import { SdPlatformModelStatus, SdPlatformRequestModelStatus, SdPlatformResponseAnalyticsTimestampType, SdPlatformResponseModelAdmin, SdPlatformResponseUserAdmin, SdPlatformResponseUserPublic, SdPlatformSdk, SdPlatformValidationResponseError } from "@shapediver/sdk.platform-api-sdk-v1";
 import { getChunkNameFromAttributes, makeExampleSdtf, mapSdtfTypeHintToParameterType, parseSdtf, printSdtfInfo, readSdtf } from "./SdtfUtils";
 import { IParameterValue, runCustomizationUsingSdtf } from "./GeometryBackendUtilsSdtf";
 import { ISdtfReadableAsset, SdtfTypeHintName } from "@shapediver/sdk.sdtf-v1";
@@ -257,23 +258,27 @@ export const notifyUsersAboutDecommissioning = async (filename?: string): Promis
         const modelsDesktop = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.desktop > 0)
         const modelsEmbedded = modelsPerUser[user_id].done.filter(m => m.analytics.sessions.embedded > 0)
 
-        htmlUser += headingHtml(3, "Models accessed in the past three months")
+        htmlUser += headingHtml(3, "Models accessed in the past two months")
        
         if (modelsApp.length > 0 || modelsBackend.length > 0 || modelsDesktop.length > 0 || modelsEmbedded.length > 0) {
             
-            htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past three months. The usage count shows how many sessions have been opened. '
+            htmlUser += 'The following models hosted on the Rhino 5 Geometry Backend system and owned by you have been accessed in the past two months. The usage count shows how many sessions have been opened. '
 
             if (modelsApp.length > 0) {
                 htmlUser += listModelsHtml('Access via platform', modelsApp, "app")
+                console.log(`User ${user_id}, ${email}, modelsApp: ${modelsApp.length}`);
             }
             if (modelsBackend.length > 0) {
                 htmlUser += listModelsHtml('Access via backend API', modelsBackend, "backend")
+                console.log(`User ${user_id}, ${email}, modelsBackend: ${modelsBackend.length}`);
             }
             if (modelsDesktop.length > 0) {
                 htmlUser += listModelsHtml('Access from desktop clients', modelsDesktop, "desktop")
+                console.log(`User ${user_id}, ${email}, modelsDesktop: ${modelsDesktop.length}`);
             }
             if (modelsEmbedded.length > 0) {
                 htmlUser += listModelsHtml('Access from embedding', modelsEmbedded, "embedded")
+                console.log(`User ${user_id}, ${email}, modelsEmbedded: ${modelsEmbedded.length}`);
             }
 
         }
@@ -300,7 +305,9 @@ export const notifyUsersAboutDecommissioning = async (filename?: string): Promis
 
         const href = `https://downloads.shapediver.com/rhino5-decommissioning/${fn}`
         console.log(`User ${user_id}, ${email}, ${href}`)
-        await createNotification(user_id, href)
+
+        if (email.endsWith('shapediver.com'))
+            await createNotification(user_id, href)
     
     }
 
