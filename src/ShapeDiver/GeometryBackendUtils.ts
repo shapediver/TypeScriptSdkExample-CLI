@@ -4,7 +4,8 @@ import {
     ShapeDiverResponseDto, 
     ShapeDiverResponseExport, 
     ShapeDiverResponseOutput, 
-    ShapeDiverSdk 
+    ShapeDiverSdk, 
+    ShapeDiverSdkApiResponseType
 } from "@shapediver/sdk.geometry-api-sdk-v2";
 import * as fsp from 'fs/promises';
 
@@ -185,3 +186,132 @@ export const getSessionAnalytics = async (access_data: IGeometryBackendAccessDat
     })
     return dto
 }
+
+/**
+ * Run a computation of a ShapeDiver model which expects a GeoJSON input and outputs GeoJSON. 
+ * Throws if the model does not have the expected parameters (inputs), output, and export. 
+ * @param ticket Embedding ticket when calling this from a browser, backend ticket otherwise. 
+ * @param modelViewUrl 
+ * @param geojsonInput The GeoJSON input as string. 
+ * @returns The GeoJSON output as string. 
+ */
+export const runShapeDiverGeoJsonModel = async (ticket: string, modelViewUrl: string, geojsonInput: string) : Promise<string> => {
+
+    /**
+     * Create instance of SDK. 
+     * This could be strengthened by JWT auth, but would require a backend application to request the JWT from 
+     * the ShapeDiver platform using platform access keys. 
+     */ 
+    const sdk = create(modelViewUrl); 
+
+    /**
+     * Initialize session. 
+     * When running from a browser, the ticket must be an "embedding ticket". 
+     * In case of JWT auth, it's sufficient to provide the model id. 
+     */
+    const dto = await sdk.session.init(ticket);
+
+    // look for inputs (parameters) and outputs
+    const filterByDisplayNameorNameInvariant = (o : {name: string, displayname?: string}, text: string) : boolean => {
+        text = text.toLowerCase();
+        if (o.displayname?.toLowerCase().startsWith(text)) 
+            return true;
+        return o.name.toLowerCase().startsWith(text);
+    };
+
+    const textParam = Object.values(dto.parameters).find(p => p.type === 'String' && filterByDisplayNameorNameInvariant(p, "text"));
+    if (!textParam) {
+        throw new Error('Expected model to have a text parameter whose name starts with "Text" (case insensitive)');
+    }
+
+    const textFileParam = Object.values(dto.parameters).find(p => p.type === 'File' && filterByDisplayNameorNameInvariant(p, "text"));
+    if (!textFileParam) {
+        throw new Error('Expected model to have a text file parameter whose name starts with "Text" (case insensitive)');
+    }
+
+    const geojsonOutput = Object.values(dto.outputs).find(o => filterByDisplayNameorNameInvariant(o, "geojson"));
+    if (!geojsonOutput) {
+        throw new Error('Expected model to have an output whose name starts with "Geojson" (case insensitive)');
+    }
+
+    const geojsonExport = Object.values(dto.exports).find(o => o.type === "download" && filterByDisplayNameorNameInvariant(o, "geojson"));
+    if (!geojsonExport) {
+        throw new Error('Expected model to have an export of type "download" whose name starts with "Geojson" (case insensitive)');
+    }
+
+    // assign parameter values
+    const parameterBody : {[key: string]: string} = {};
+    const forceUseFileParam = false;
+    if (forceUseFileParam || geojsonInput.length >= textParam.max) {
+        // geojson length exceeds maximum length of direct text parameter, upload as file
+        const buffer = Buffer.from(geojsonInput, 'utf8');
+        // check if 'application/json' is available among allowed content types, otherwise just use whatever we got
+        const contentType = textFileParam.format.includes('application/json') ? 'application/json' : textFileParam.format[0];
+        // request file upload
+        const uploadRequest = await sdk.file.requestUpload(dto.sessionId, {[textFileParam.id]: {format: contentType, size: buffer.byteLength}})
+        const uploadDefinition = uploadRequest.asset.file[textFileParam.id]
+        // upload file
+        await sdk.utils.upload(uploadDefinition.href, buffer, contentType)
+
+        parameterBody[textParam.id] = "";
+        parameterBody[textFileParam.id] = uploadDefinition.id;
+    }
+    else {
+        parameterBody[textParam.id] = geojsonInput;
+        parameterBody[textFileParam.id] = "";
+    }
+
+    // run and wait for computation
+    const maxWaitMsecs = dto.setting?.compute?.max_comp_time ? 2.0 * dto.setting.compute.max_comp_time : -1;
+    const body = {
+        parameters: parameterBody,
+        outputs: [geojsonOutput.id],
+        exports: [geojsonExport.id],
+    };
+    const result = await sdk.utils.submitAndWaitForExport(sdk, dto.sessionId, body, maxWaitMsecs);
+  
+    // get output data
+    const geojsonOutputResult = result.outputs[geojsonOutput.id] as ShapeDiverResponseOutput;
+    if (geojsonOutputResult.status_computation !== 'success') {
+        throw new Error(`Computation of model failed with status ${geojsonOutputResult.status_computation}`);
+    }
+    if (geojsonOutputResult.status_collect !== 'success') {
+        throw new Error(`Data collection for model failed with status ${geojsonOutputResult.status_collect}`);
+    }
+
+    let geojsonResult = '';
+    const forceUseExport = false;
+    if (!forceUseExport && geojsonOutputResult.content.length === 1 && geojsonOutputResult.content[0].data && typeof geojsonOutputResult.content[0].data === 'string') 
+    {
+        // The GeoJSON data output provides data, we use it and skip using the export link. 
+        geojsonResult = geojsonOutputResult.content[0].data;
+    }
+    else
+    {
+        // In case we didn't get data from the GeoJSON data output, probably the size of the resulting GeoJSON  
+        // exceeded the limit for data outputs, and we need to download the result from the export link. 
+        const geojsonExportResult = result.exports[geojsonExport.id] as ShapeDiverResponseExport;
+
+        if (geojsonExportResult.status_computation !== 'success') {
+            throw new Error(`Computation of model failed with status ${geojsonExportResult.status_computation}`);
+        }
+        if (geojsonExportResult.status_collect !== 'success') {
+            throw new Error(`Data collection for model failed with status ${geojsonExportResult.status_collect}`);
+        }
+
+        if (geojsonExportResult.content.length < 1) {
+            throw new Error(`Expected a text file resulting from export ${geojsonExport.name}`);
+        }
+
+        // download from the export link
+        const href = geojsonExportResult.content[0].href;
+        const geojsonObject = ((await sdk.utils.download(href, ShapeDiverSdkApiResponseType.JSON))[1]);
+        geojsonResult = JSON.stringify(geojsonObject, null, 0);
+    }
+
+    // close session
+    await sdk.session.close(dto.sessionId);
+
+    return geojsonResult;
+}
+

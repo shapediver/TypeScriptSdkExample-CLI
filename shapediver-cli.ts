@@ -1,5 +1,6 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
+import { runShapeDiverGeoJsonModel } from "./src/ShapeDiver/GeometryBackendUtils";
 import { NotifyUsersOrganizationFilter } from "./src/ShapeDiver/PlatformBackendUtils";
 import { 
     createAndUploadModel, 
@@ -309,6 +310,41 @@ yargs(process.argv.slice(2))
                 argv.f as string,
                 typeof argv.s === 'boolean' ? argv.s as boolean : false,
             );
+        },
+    )
+    .command(
+        "geojson-example",
+        "Run a computation of a model which provides a geojson input and output.",
+        (yargs) => {
+            yargs
+                .options({
+                    t: {
+                        alias: "ticket",
+                        description: "Ticket to be used (embedding ticket when calling from browser, backend ticket when calling from command line)",
+                        type: "string",
+                        demandOption: true,
+                    },
+                    m: {
+                        alias: "modelViewUrl",
+                        description: "Model View URL (API endpoint) to be used",
+                        type: "string",
+                        demandOption: true,
+                    },
+                    g: {
+                        alias: "geojson",
+                        description: "GeoJSON input data",
+                        type: "string",
+                        demandOption: true,
+                    },
+                })
+        },
+        async (argv) => {
+            const result = await runShapeDiverGeoJsonModel(
+                argv.t as string,
+                argv.m as string,
+                argv.g as string,
+            );
+            console.log(`GeoJSON result: ${result}`)
         },
     )
     .command(
