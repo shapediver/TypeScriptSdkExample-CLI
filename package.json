@@ -5,17 +5,17 @@
   "main": "handler.js",
   "scripts": {},
   "dependencies": {
-    "@shapediver/sdk.geometry-api-sdk-v2": "^1.6.0",
-    "@shapediver/sdk.platform-api-sdk-v1": "^2.18.0",
-    "@shapediver/sdk.sdtf-geometry": "^1.4.0",
+    "@shapediver/sdk.geometry-api-sdk-v2": "^1.8.2",
+    "@shapediver/sdk.platform-api-sdk-v1": "^2.18.9",
+    "@shapediver/sdk.sdtf-geometry": "^1.4.2",
     "@shapediver/sdk.sdtf-rhino3dm": "^1.4.0",
-    "@shapediver/sdk.sdtf-v1": "^1.4.0",
+    "@shapediver/sdk.sdtf-v1": "^1.4.2",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^20.6.5",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "@types/node": "^20.11.20",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "author": "ShapeDiver GmbH",
   "license": "MIT"
