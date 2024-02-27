@@ -486,7 +486,7 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
     const users_res = await sdk.users.query({
       filters: filter,
       //sorters: {'created_at': SdPlatformSortingOrder.Asc},
-      limit: 25,
+      limit: 100,
       strict_limit: true,
       offset: offset
     });
@@ -504,18 +504,24 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
     // if not dry run, create notifications. 
     if (uo.dry_run === false)
     {
-      for (let user of users)
+      // divide array users into chunks of 75 
+      const chunkLength = 75;
+      for (let i=0; i<users.length; i+=chunkLength)
       {
-        console.log(`Creating notification for user id "${user.id}", username "${user.username}", email "${user.email}".`);
+        const chunk = users.slice(i, i+chunkLength);
+        
+        for (const user of chunk)
+          console.log(`Creating notification for user id "${user.id}", username "${user.username}", email "${user.email}".`);
+      
         try
         {
-          await sdk.notifications.create({
+          await sdk.notifications.createMultiple({
             creator: SdPlatformNotificationCreator.Platform,
             level: SdPlatformNotificationLevel.Info,
             class: SdPlatformNotificationClass.Account,
             type: notification_options.type,
             description: notification_options.description,
-            receiver_ids: [user.id],
+            receiver_ids: chunk.map(x => x.id),
             href: notification_options.href
           });
         }
@@ -525,6 +531,7 @@ export const notifyUsers = async (sdk: SdPlatformSdk, notify_users_user_options:
           throw ex;
         }
       }
+
     }
     else {
       console.log(`Dry run mode, not creating notifications.`);
