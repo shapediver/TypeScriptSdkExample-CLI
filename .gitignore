@@ -25,3 +25,8 @@ config.ts*
 *.json
 *.log
 
+# But keep these files
+!package-lock.json
+!package.json
+!tsconfig.json
+
