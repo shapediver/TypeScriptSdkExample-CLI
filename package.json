@@ -1,22 +1,22 @@
 {
-  "name": "shapediver-cli",
-  "version": "1.0.0",
-  "description": "A simple example on how to use the ShapeDiver SDKs for a CLI tool.",
-  "main": "handler.js",
-  "scripts": {},
-  "dependencies": {
-    "@shapediver/sdk.geometry-api-sdk-v2": "^1.8.2",
-    "@shapediver/sdk.platform-api-sdk-v1": "^2.18.9",
-    "@shapediver/sdk.sdtf-geometry": "^1.4.2",
-    "@shapediver/sdk.sdtf-rhino3dm": "^1.4.0",
-    "@shapediver/sdk.sdtf-v1": "^1.4.2",
-    "yargs": "^17.7.2"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.20",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
-  },
-  "author": "ShapeDiver GmbH",
-  "license": "MIT"
+    "name": "shapediver-cli",
+    "version": "1.0.0",
+    "description": "A simple example on how to use the ShapeDiver SDKs for a CLI tool.",
+    "main": "handler.js",
+    "scripts": {},
+    "dependencies": {
+        "@shapediver/sdk.geometry-api-sdk-v2": "^1.8.2",
+        "@shapediver/sdk.platform-api-sdk-v1": "^2.18.9",
+        "@shapediver/sdk.sdtf-geometry": "^1.4.2",
+        "@shapediver/sdk.sdtf-rhino3dm": "^1.4.0",
+        "@shapediver/sdk.sdtf-v1": "^1.4.2",
+        "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.20",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    },
+    "author": "ShapeDiver GmbH",
+    "license": "MIT"
 }
