@@ -213,7 +213,7 @@ export const readSdtf = async (
         integrations: [new SdtfRhino3dmTypeIntegration()],
         authToken,
     });
-    const parser = await sdk.createParser();
+    const parser = sdk.createParser();
     let asset: ISdtfReadableAsset;
     if ((buffer as string).padStart) {
         const str: string = buffer as string;

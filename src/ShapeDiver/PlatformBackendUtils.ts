@@ -37,7 +37,7 @@ export interface IPlatformBackendModelData {
  * @returns
  */
 export const initPlatformSdk = async (): Promise<SdPlatformSdk> => {
-    const sdk = await create({
+    const sdk = create({
         baseUrl: config.PlatformBackend.baseUrl,
         clientId: config.PlatformBackend.clientId,
     });

@@ -1,7 +1,6 @@
 import {
     getSessionAnalytics,
     initSession,
-    ISessionData,
     uploadModel,
     waitForModelCheck,
 } from './GeometryBackendUtils';
@@ -50,7 +49,7 @@ import {
 } from './SdtfUtils';
 import { IParameterValue, runCustomizationUsingSdtf } from './GeometryBackendUtilsSdtf';
 import { ISdtfReadableAsset, SdtfTypeHintName } from '@shapediver/sdk.sdtf-v1';
-import { ShapeDiverSdkApiResponseType } from '@shapediver/sdk.geometry-api-sdk-v2';
+import { ResGetModel, UtilsApi } from '@shapediver/sdk.geometry-api-sdk-v2';
 
 function* chunks<T>(arr: T[], n: number): Generator<T[], void> {
     for (let i = 0; i < arr.length; i += n) {
@@ -378,9 +377,9 @@ export const displayModelInfoPlatform = async (identifier: string): Promise<void
 export const displayModelInfoGeometry = async (identifier: string): Promise<void> => {
     const sdk = await initPlatformSdk();
     const data = await getModelAccessData(sdk, identifier, true, true);
-    const result = await initSession(data.access_data);
+    const [_, res] = await initSession(data.access_data);
 
-    console.log(result.dto);
+    console.log(res);
 };
 
 export const createAndUploadModel = async (filename: string, title?: string): Promise<void> => {
@@ -399,24 +398,24 @@ export const createAndUploadModel = async (filename: string, title?: string): Pr
 
     // Upload model file to geometry backend
     console.log('Upload model...');
-    let geometry_data = await uploadModel(platform_data.access_data, filename);
-    geometry_data = await waitForModelCheck(geometry_data);
+    const [config, res_upload_model] = await uploadModel(platform_data.access_data, filename);
+    const res_get_model = await waitForModelCheck(config, res_upload_model.model.id);
 
-    console.log(geometry_data.dto);
+    console.log(res_get_model);
 
-    await publishModel_(sdk, platform_data, geometry_data);
+    await publishModel_(sdk, platform_data, res_get_model);
 };
 
 const publishModel_ = async (
     sdk: SdPlatformSdk,
     platform_data: IPlatformBackendModelData,
-    geometry_data: ISessionData
+    res_get_model: ResGetModel
 ): Promise<void> => {
-    if (geometry_data.dto.model.stat === 'pending') {
+    if (res_get_model.model.stat === 'pending') {
         console.log('Model checking is pending, you will be notified once it completes.');
-    } else if (geometry_data.dto.model.stat === 'denied') {
-        console.error(`Model was denied: ${geometry_data.dto.model.msg}`);
-    } else if (geometry_data.dto.model.stat === 'confirmed') {
+    } else if (res_get_model.model.stat === 'denied') {
+        console.error(`Model was denied: ${res_get_model.model.msg}`);
+    } else if (res_get_model.model.stat === 'confirmed') {
         console.log('Congratulations, your model was confirmed!');
     }
 
@@ -443,12 +442,12 @@ export const publishModel = async (identifier: string): Promise<void> => {
         return;
     }
 
-    let geometry_data = await initSession(platform_data.access_data);
-    geometry_data = await waitForModelCheck(geometry_data);
+    const [config, res_session] = await initSession(platform_data.access_data);
+    const res_get_model = await waitForModelCheck(config, res_session.model.id);
 
-    console.log(geometry_data.dto);
+    console.log(res_get_model);
 
-    await publishModel_(sdk, platform_data, geometry_data);
+    await publishModel_(sdk, platform_data, res_get_model);
 };
 
 const dayTimestampToEpoch = (ts: string): number => {
@@ -501,7 +500,7 @@ export const sdTFExample = async (
     // get access to the model
     const sdk = await initPlatformSdk();
     const data = await getModelAccessData(sdk, identifier, true, true);
-    const context = await initSession(data.access_data);
+    const [config, res_session] = await initSession(data.access_data);
 
     // get input sdTF from command line, otherwise use auto-generated example
     let sdTFbuffer: ArrayBuffer;
@@ -513,7 +512,7 @@ export const sdTFExample = async (
             throw new Error(`File ${sdTFfilename} can not be read`);
         }
         sdTFasset = await readSdtf(sdTFfilename);
-        sdTFbuffer = await (await fsp.readFile(sdTFfilename)).buffer;
+        sdTFbuffer = (await fsp.readFile(sdTFfilename)).buffer;
     } else {
         console.log('No input sdTF file was provided, using an example.');
         sdTFbuffer = await makeExampleSdtf([
@@ -557,7 +556,7 @@ export const sdTFExample = async (
             continue;
         }
         // find a matching parameter for the chunk
-        const params = Object.values(context.dto.parameters).filter(
+        const params = Object.values(res_session.parameters).filter(
             (p) => p.type === parameterType
         );
         if (params.length === 0) {
@@ -587,7 +586,7 @@ export const sdTFExample = async (
 
     // run customization
     console.log('\nRunning customization:');
-    const result = await runCustomizationUsingSdtf(context, requestDto);
+    const result = await runCustomizationUsingSdtf(config, res_session, requestDto);
 
     // print info about results
     console.log('\nParsing result:');
@@ -603,10 +602,7 @@ export const sdTFExample = async (
                 );
                 await parseSdtf(item.href, data.access_data.access_token);
                 if (saveSdtfs) {
-                    const buf = await context.sdk.utils.download(
-                        item.href,
-                        ShapeDiverSdkApiResponseType.DATA
-                    );
+                    const buf = await new UtilsApi(config).download(item.href);
                     const filename = `${output.name}_${output.id}:${output.version}.sdtf`;
                     try {
                         await fsp.writeFile(filename, new DataView(buf[1]));

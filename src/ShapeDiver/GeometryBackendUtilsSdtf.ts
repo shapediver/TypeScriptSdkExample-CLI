@@ -1,10 +1,13 @@
 import {
-    ShapeDiverResponseOutput,
-    ShapeDiverRequestSdtfUploadPartType,
-    ShapeDiverRequestCustomization,
-    ShapeDiverRequestParameterSType,
+    ResCreateSessionByTicket,
+    SdtfApi,
+    Configuration,
+    ResOutput,
+    ReqCustomization,
+    ReqSdtfType,
+    UtilsApi,
+    CommonsStypeParameter,
 } from '@shapediver/sdk.geometry-api-sdk-v2';
-import { ISessionData } from './GeometryBackendUtils';
 
 /**
  * Interface for specifying parameter values.
@@ -50,9 +53,9 @@ export interface IParameterValue {
  */
 export interface SdtfCustomizationResult {
     /** Resulting outputs. */
-    outputs: { [outputId: string]: ShapeDiverResponseOutput };
+    outputs: { [outputId: string]: ResOutput };
     /** The parameter body that was used for the customization request, the sdTF ids can be read from here. */
-    requestBody: ShapeDiverRequestCustomization;
+    requestBody: ReqCustomization;
 }
 
 /**
@@ -63,18 +66,17 @@ export interface SdtfCustomizationResult {
  *                    A ShapeDiverError will be thrown in case max_wait_time is exceeded.
  */
 export const runCustomizationUsingSdtf = async (
-    session: ISessionData,
+    config: Configuration,
+    res_session: ResCreateSessionByTicket,
     parameters: { [paramId: string]: IParameterValue },
     maxWaitMsec: number = -1
 ): Promise<SdtfCustomizationResult> => {
-    const { sdk, dto } = session;
-
     // collect sdTFs which need to be uploaded
     const sdTFsForUpload: Array<ArrayBuffer> = [];
 
     // sanity check
     for (const paramId in parameters) {
-        const param = dto.parameters[paramId];
+        const param = res_session.parameters[paramId];
         if (!param) throw new Error(`Parameter ${paramId} does not exist.`);
 
         const value = parameters[paramId];
@@ -98,26 +100,28 @@ export const runCustomizationUsingSdtf = async (
     }
 
     // request upload of sdTFs
-    let response = await sdk.sdtf.requestUpload(
-        dto.sessionId,
-        sdTFsForUpload.map((arrayBuffer) => {
-            return {
-                namespace: 'pub',
-                content_length: arrayBuffer.byteLength,
-                content_type: ShapeDiverRequestSdtfUploadPartType.MODEL_SDTF,
-            };
-        })
-    );
+    let response = (
+        await new SdtfApi(config).uploadSdtf(
+            res_session.sessionId,
+            sdTFsForUpload.map((arrayBuffer) => {
+                return {
+                    namespace: 'pub',
+                    content_length: arrayBuffer.byteLength,
+                    content_type: ReqSdtfType.MODEL_SDTF,
+                };
+            })
+        )
+    ).data;
 
     // upload of sdTFs
     const promises = sdTFsForUpload.map((buffer, index) => {
         const url = response.asset.sdtf[index].href;
-        return sdk.utils.upload(url, buffer, ShapeDiverRequestSdtfUploadPartType.MODEL_SDTF);
+        return new UtilsApi(config).upload(url, buffer, ReqSdtfType.MODEL_SDTF);
     });
     await Promise.all(promises);
 
     // prepare parameter data
-    const requestBody: ShapeDiverRequestCustomization = {};
+    const requestBody: ReqCustomization = {};
     Object.keys(parameters).forEach((paramId) => {
         const value = parameters[paramId];
         // did we get a string value?
@@ -127,7 +131,7 @@ export const runCustomizationUsingSdtf = async (
         // did we get sdTF data?
         else if (value.sdtf) {
             // was an id specified for the sdTF?
-            let stypeValue: ShapeDiverRequestParameterSType = {};
+            let stypeValue: CommonsStypeParameter = {};
             if (value.sdtf.id) {
                 stypeValue = {
                     asset: {
@@ -153,15 +157,14 @@ export const runCustomizationUsingSdtf = async (
     });
     console.log('Customization request body: ', JSON.stringify(requestBody, null, 2));
 
-    const result = await sdk.utils.submitAndWaitForCustomization(
-        sdk,
-        dto.sessionId,
+    const result = await new UtilsApi(config).submitAndWaitForOutput(
+        res_session.sessionId,
         requestBody,
         maxWaitMsec
     );
 
     return {
         requestBody,
-        outputs: result.outputs as { [outputId: string]: ShapeDiverResponseOutput },
+        outputs: result.outputs as { [outputId: string]: ResOutput },
     };
 };

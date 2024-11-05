@@ -1,5 +1,7 @@
 #!/usr/bin/env node_modules/.bin/ts-node
 
+import { SdPlatformError } from '@shapediver/sdk.platform-api-sdk-v1';
+import { SdGeometryError, processError } from '@shapediver/sdk.geometry-api-sdk-v2';
 import { runShapeDiverGeoJsonModel } from './src/ShapeDiver/GeometryBackendUtils';
 import { NotifyUsersOrganizationFilter } from './src/ShapeDiver/PlatformBackendUtils';
 import {
@@ -591,4 +593,16 @@ yargs(process.argv.slice(2))
             '    "./shapediver-cli.ts notify-users -t TYPE -d DESCRIPTION -o n -p Business"'
         );
         console.log('');
+    })
+    .fail(function (_msg, err, _yargs) {
+        const e = processError(err);
+        let prefix: string;
+
+        if (e instanceof SdPlatformError) prefix = `Platform Error:`;
+        else if (e instanceof SdGeometryError) prefix = `Geometry Error:`;
+        else prefix = 'Generic Error:';
+
+        console.error(prefix, e.message);
+        // console.error('\n', err);
+        process.exit(1);
     }).argv;

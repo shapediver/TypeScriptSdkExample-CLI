@@ -1,24 +1,21 @@
 import { IGeometryBackendAccessData } from './Commons';
 import {
-    create,
-    ShapeDiverResponseDto,
-    ShapeDiverResponseExport,
-    ShapeDiverResponseOutput,
-    ShapeDiverSdk,
-    ShapeDiverSdkApiResponseType,
+    AnalyticsApi,
+    Configuration,
+    FileApi,
+    ModelApi,
+    ReqModelFileType,
+    ResCreateSessionByTicket,
+    ResExport,
+    ResGetModel,
+    ResGetModelStatistics,
+    ResModelStatus,
+    ResOutput,
+    SessionApi,
+    sleep,
+    UtilsApi,
 } from '@shapediver/sdk.geometry-api-sdk-v2';
 import * as fsp from 'fs/promises';
-
-/**
- * Wrapper for an instance of the Geometry Backend SDK and a session,
- * makes it easy to handle multiple sessions at once.
- */
-export interface ISessionData {
-    /** Instance of the sdk (holds the access token) */
-    sdk: ShapeDiverSdk;
-    /** Data of the model (parameters, outputs, exports, etc), the response of the session init call */
-    dto: ShapeDiverResponseDto;
-}
 
 /**
  * Initialize a session
@@ -27,21 +24,22 @@ export interface ISessionData {
  */
 export const initSession = async (
     access_data: IGeometryBackendAccessData
-): Promise<ISessionData> => {
-    const sdk = create(access_data.model_view_url, access_data.access_token);
-    const dto = await sdk.session.init(access_data.ticket);
+): Promise<[Configuration, ResCreateSessionByTicket]> => {
+    const config = new Configuration({
+        basePath: access_data.model_view_url,
+        accessToken: access_data.access_token,
+    });
+    const dto = await new SessionApi(config).createSessionByTicket(access_data.ticket);
 
-    return { sdk, dto };
+    return [config, dto.data];
 };
 
 /**
  * Close a session
  * @param session
  */
-export const closeSession = async (session: ISessionData): Promise<void> => {
-    const { sdk, dto } = session;
-
-    await sdk.session.close(dto.sessionId);
+export const closeSession = async (config: Configuration, sessionId: string): Promise<void> => {
+    await new SessionApi(config).closeSession(sessionId);
 };
 
 /**
@@ -52,20 +50,18 @@ export const closeSession = async (session: ISessionData): Promise<void> => {
  *                    A ShapeDiverError will be thrown in case max_wait_time is exceeded.
  */
 export const runCustomization = async (
-    session: ISessionData,
+    config: Configuration,
+    sessionId: string,
     parameters: { [paramId: string]: string },
     maxWaitMsec: number = -1
-): Promise<{ [outputId: string]: ShapeDiverResponseOutput }> => {
-    const { sdk, dto } = session;
-
-    const result = await sdk.utils.submitAndWaitForCustomization(
-        sdk,
-        dto.sessionId,
+): Promise<{ [outputId: string]: ResOutput }> => {
+    const result = await new UtilsApi(config).submitAndWaitForOutput(
+        sessionId,
         parameters,
         maxWaitMsec
     );
 
-    return result.outputs as { [outputId: string]: ShapeDiverResponseOutput };
+    return result.outputs as { [outputId: string]: ResOutput };
 };
 
 /**
@@ -77,21 +73,19 @@ export const runCustomization = async (
  *                    A ShapeDiverError will be thrown in case max_wait_time is exceeded.
  */
 export const runExport = async (
-    session: ISessionData,
+    config: Configuration,
+    sessionId: string,
     parameters: { [paramId: string]: string },
     id: string,
     maxWaitMsec: number = -1
-): Promise<ShapeDiverResponseExport> => {
-    const { sdk, dto } = session;
-
-    const result = await sdk.utils.submitAndWaitForExport(
-        sdk,
-        dto.sessionId,
-        { parameters, exports: { id } },
+): Promise<ResExport> => {
+    const result = await new UtilsApi(config).submitAndWaitForExport(
+        sessionId,
+        { parameters, exports: [id] },
         maxWaitMsec
     );
 
-    return result.exports[id] as ShapeDiverResponseExport;
+    return result.exports[id] as ResExport;
 };
 
 /**
@@ -103,27 +97,25 @@ export const runExport = async (
 export const uploadModel = async (
     access_data: IGeometryBackendAccessData,
     filename: string
-): Promise<ISessionData> => {
-    const sdk = create(access_data.model_view_url, access_data.access_token);
+): Promise<[Configuration, ResGetModel]> => {
+    const config = new Configuration({
+        basePath: access_data.model_view_url,
+        accessToken: access_data.access_token,
+    });
 
     // get model info, which will include upload link
-    const dto = await sdk.model.get(access_data.guid);
+    const dto = (await new ModelApi(config).getModel(access_data.guid)).data;
 
     // upload model
-    await sdk.utils.upload(
+    await new UtilsApi(config).upload(
         dto.file.upload,
         await fsp.readFile(filename),
-        dto.setting.compute.ftype === 'gh' ? 'application/octet-stream' : 'application/xml'
+        dto.setting.compute.ftype === ReqModelFileType.GRASSHOPPER_BINARY
+            ? 'application/octet-stream'
+            : 'application/xml'
     );
 
-    return {
-        sdk,
-        dto,
-    };
-};
-
-const sleep = async (msec: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, msec));
+    return [config, dto];
 };
 
 /**
@@ -131,18 +123,19 @@ const sleep = async (msec: number): Promise<void> => {
  * @param session_data
  * @returns
  */
-export const waitForModelCheck = async (session_data: ISessionData): Promise<ISessionData> => {
-    const { sdk } = session_data;
-    let { dto } = session_data;
+export const waitForModelCheck = async (
+    config: Configuration,
+    modelId: string
+): Promise<ResGetModel> => {
+    let dto = (await new ModelApi(config).getModel(modelId)).data;
 
-    dto = await sdk.model.get(dto.model.id);
-
-    if (!['not_uploaded', 'uploaded', 'pending'].includes(dto.model.stat)) {
+    if (
+        ![ResModelStatus.NOT_UPLOADED, ResModelStatus.UPLOADED, ResModelStatus.PENDING].includes(
+            dto.model.stat as any
+        )
+    ) {
         // no need to wait
-        return {
-            sdk,
-            dto,
-        };
+        return dto;
     }
 
     let epochStart = Date.now();
@@ -152,7 +145,7 @@ export const waitForModelCheck = async (session_data: ISessionData): Promise<ISe
         }
         console.log('Waiting for model check to start...');
         await sleep(2500);
-        dto = await sdk.model.get(dto.model.id);
+        dto = (await new ModelApi(config).getModel(dto.model.id)).data;
     }
 
     const max_comp_time = dto.setting.compute.max_comp_time;
@@ -162,22 +155,16 @@ export const waitForModelCheck = async (session_data: ISessionData): Promise<ISe
     while (!['confirmed', 'denied', 'pending'].includes(dto.model.stat)) {
         if (Date.now() - epochStart > 2 * max_comp_time) {
             console.warn(`Model check did not complete within ${max_comp_time / 1000} seconds.`);
-            return {
-                sdk,
-                dto,
-            };
+            return dto;
         }
         console.log('Waiting for model check to finish...');
         await sleep(2500);
-        dto = await sdk.model.get(dto.model.id);
+        dto = (await new ModelApi(config).getModel(dto.model.id)).data;
     }
 
     console.log(`Model status: ${dto.model.stat}`);
 
-    return {
-        sdk,
-        dto,
-    };
+    return dto;
 };
 
 /**
@@ -191,26 +178,31 @@ export const getSessionAnalytics = async (
     access_data: IGeometryBackendAccessData,
     timestamp_from: string,
     timestamp_to: string
-): Promise<ShapeDiverResponseDto> => {
-    const sdk = create(access_data.model_view_url, access_data.access_token);
-    const dto = await sdk.analytics.modelSessionStatistics({
-        parameters: access_data.guid
-            ? [
-                  {
-                      modelid: access_data.guid,
-                      timestamp_from,
-                      timestamp_to,
-                  },
-              ]
-            : access_data.guids.map((g) => {
-                  return {
-                      modelid: g,
-                      timestamp_from,
-                      timestamp_to,
-                  };
-              }),
+): Promise<ResGetModelStatistics> => {
+    const config = new Configuration({
+        basePath: access_data.model_view_url,
+        accessToken: access_data.access_token,
     });
-    return dto;
+
+    return (
+        await new AnalyticsApi(config).getModelStatistics({
+            parameters: access_data.guid
+                ? [
+                      {
+                          modelid: [access_data.guid],
+                          timestamp_from,
+                          timestamp_to,
+                      },
+                  ]
+                : access_data.guids.map((g) => {
+                      return {
+                          modelid: [g],
+                          timestamp_from,
+                          timestamp_to,
+                      };
+                  }),
+        })
+    ).data;
 };
 
 /**
@@ -231,14 +223,14 @@ export const runShapeDiverGeoJsonModel = async (
      * This could be strengthened by JWT auth, but would require a backend application to request the JWT from
      * the ShapeDiver platform using platform access keys.
      */
-    const sdk = create(modelViewUrl);
+    const config = new Configuration({ basePath: modelViewUrl });
 
     /**
      * Initialize session.
      * When running from a browser, the ticket must be an "embedding ticket".
      * In case of JWT auth, it's sufficient to provide the model id.
      */
-    const dto = await sdk.session.init(ticket);
+    const dto = (await new SessionApi(config).createSessionByTicket(ticket)).data;
 
     // look for inputs (parameters) and outputs
     const filterByDisplayNameorNameInvariant = (
@@ -297,12 +289,14 @@ export const runShapeDiverGeoJsonModel = async (
             ? 'application/json'
             : textFileParam.format[0];
         // request file upload
-        const uploadRequest = await sdk.file.requestUpload(dto.sessionId, {
-            [textFileParam.id]: { format: contentType, size: buffer.byteLength },
-        });
+        const uploadRequest = (
+            await new FileApi(config).uploadFile(dto.sessionId, {
+                [textFileParam.id]: { format: contentType, size: buffer.byteLength },
+            })
+        ).data;
         const uploadDefinition = uploadRequest.asset.file[textFileParam.id];
         // upload file
-        await sdk.utils.upload(uploadDefinition.href, buffer, contentType);
+        await new UtilsApi().uploadAsset(uploadDefinition.href, buffer, uploadDefinition.headers);
 
         parameterBody[textParam.id] = '';
         parameterBody[textFileParam.id] = uploadDefinition.id;
@@ -320,10 +314,14 @@ export const runShapeDiverGeoJsonModel = async (
         outputs: [geojsonOutput.id],
         exports: [geojsonExport.id],
     };
-    const result = await sdk.utils.submitAndWaitForExport(sdk, dto.sessionId, body, maxWaitMsecs);
+    const result = await new UtilsApi(config).submitAndWaitForExport(
+        dto.sessionId,
+        body,
+        maxWaitMsecs
+    );
 
     // get output data
-    const geojsonOutputResult = result.outputs[geojsonOutput.id] as ShapeDiverResponseOutput;
+    const geojsonOutputResult = result.outputs[geojsonOutput.id] as ResOutput;
     if (geojsonOutputResult.status_computation !== 'success') {
         throw new Error(
             `Computation of model failed with status ${geojsonOutputResult.status_computation}`
@@ -348,7 +346,7 @@ export const runShapeDiverGeoJsonModel = async (
     } else {
         // In case we didn't get data from the GeoJSON data output, probably the size of the resulting GeoJSON
         // exceeded the limit for data outputs, and we need to download the result from the export link.
-        const geojsonExportResult = result.exports[geojsonExport.id] as ShapeDiverResponseExport;
+        const geojsonExportResult = result.exports[geojsonExport.id] as ResExport;
 
         if (geojsonExportResult.status_computation !== 'success') {
             throw new Error(
@@ -367,14 +365,12 @@ export const runShapeDiverGeoJsonModel = async (
 
         // download from the export link
         const href = geojsonExportResult.content[0].href;
-        const geojsonObject = (
-            await sdk.utils.download(href, ShapeDiverSdkApiResponseType.JSON)
-        )[1];
+        const geojsonObject = (await new UtilsApi().download(href, { responseType: 'json' })).data;
         geojsonResult = JSON.stringify(geojsonObject, null, 0);
     }
 
     // close session
-    await sdk.session.close(dto.sessionId);
+    await new SessionApi(config).closeSession(dto.sessionId);
 
     return geojsonResult;
 };
