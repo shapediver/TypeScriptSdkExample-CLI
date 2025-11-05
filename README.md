@@ -30,8 +30,10 @@ Install node.js. Possibilities and related reading:
 ## Install dependencies
 
 ```
-npm install
+pnpm install
 ```
+
+Note: In case you don't have `pnpm` installed (we recommend it), `npm` should work as well. 
 
 ## Create config.ts from config.ts.template
 
