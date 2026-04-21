@@ -88,7 +88,7 @@ export const getModelAccessData = async (
         access_data: {
             access_token: tokenData.access_token,
             model_view_url: tokenData.model_view_url,
-            ticket: backend ? model.backend_ticket.ticket : model.ticket.ticket,
+            ticket: backend ? model.backend_ticket!.ticket : model.ticket!.ticket,
             guid: model.guid,
             scopes,
         },
@@ -302,12 +302,20 @@ export const patchModelStatus = async (
 export interface ICreditUsage {
     /** timestamp */
     timestamp: string;
+	/** backend system alias */
+    backend: string;
     /** credits spent for sessions (10 minute periods) */
     sessions: number;
-    /** credits spent for exports */
-    exports: number;
-    /** credits spent for computations */
+    /** credits spent for computations (10 second chunks) */
     computations: number;
+    /** credits spent for output requests */
+    outputs: number;
+    /** credits spent for export requests */
+    exports: number;
+    /** credits spent for combined requests */
+    combined: number;
+    /** credits spent for AR requests */
+    ar: number;
 }
 
 /**
@@ -336,11 +344,12 @@ export const queryUserCreditUsage = async (
 
     const limit = 100;
 
-    const result = await sdk.userAnalytics.query({
+    const result = await sdk.userCreditMetrics.query({
         sorters: { timestamp_date: SdPlatformSortingOrder.Asc },
         filters,
         limit,
         strict_limit: true,
+		embed: ["backend_system"],
     });
 
     if (result.data.pagination.next_offset) {
@@ -350,30 +359,47 @@ export const queryUserCreditUsage = async (
     const items: ICreditUsage[] = [];
     const aggregated: ICreditUsage = {
         timestamp: 'SUM',
+		backend: 'ALL',
         sessions: 0,
-        exports: 0,
         computations: 0,
+		outputs: 0,
+		exports: 0,
+		combined: 0,
+		ar: 0,
     };
 
     for (const item of result.data.result) {
-        const sessions = item.data.export.sum;
-
-        let exports = 0;
-        exports += Math.ceil(0.1 * (item.data.customize?.sum_desktop || 0));
-        exports += Math.ceil(0.1 * (item.data.customize?.sum_backend || 0));
-
-        const computations = item.data.embedded.billable_count;
+       
+		const sessions = item.data?.limited.sessions.credits ?? 0;
+		const computations =
+			(item.data?.limited.computations.credits ?? 0) + 
+			(item.data?.default.computations.credits ?? 0);
+		const outputs = item.data?.default.outputs.credits ?? 0;
+		const exports =
+			(item.data?.default.exports.credits ?? 0) + 
+			(item.data?.limited.exports.credits ?? 0);
+		const combined =
+			(item.data?.default.combined.credits ?? 0) + 
+			(item.data?.limited.combined.credits ?? 0);
+		const ar = item.data?.ar.credits ?? 0;
 
         items.push({
             timestamp: item.timestamp,
+            backend: item.backend_system?.alias ?? 'unknown',
             sessions,
-            exports,
-            computations,
+			computations,
+			outputs,
+			exports,
+			combined,
+			ar,
         });
 
-        aggregated.computations += computations;
-        aggregated.exports += exports;
         aggregated.sessions += sessions;
+        aggregated.computations += computations;
+		aggregated.outputs += outputs;
+		aggregated.exports += exports;
+		aggregated.combined += combined;	
+		aggregated.ar += ar;
     }
 
     items.push(aggregated);
@@ -484,7 +510,7 @@ export const notifyUsers = async (
         filter['organization_role'] = uo.organization_roles;
     }
 
-    let offset = null;
+    let offset: string | undefined = undefined;
     if (uo.offset) offset = uo.offset;
 
     let users_notified: SdPlatformResponseUserPublic[] = [];

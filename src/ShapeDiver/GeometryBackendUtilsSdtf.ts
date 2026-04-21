@@ -76,7 +76,7 @@ export const runCustomizationUsingSdtf = async (
 
     // sanity check
     for (const paramId in parameters) {
-        const param = res_session.parameters[paramId];
+        const param = res_session.parameters![paramId];
         if (!param) throw new Error(`Parameter ${paramId} does not exist.`);
 
         const value = parameters[paramId];
@@ -141,7 +141,7 @@ export const runCustomizationUsingSdtf = async (
             }
             // an ArrayBuffer must have been specified in this case (validation happens above)
             else {
-                const index = sdTFsForUpload.indexOf(value.sdtf.arrayBuffer);
+                const index = sdTFsForUpload.indexOf(value.sdtf.arrayBuffer!);
                 stypeValue = {
                     asset: {
                         id: response.asset.sdtf[index].id,
@@ -150,7 +150,7 @@ export const runCustomizationUsingSdtf = async (
             }
             // was a chunk name specified?
             if (value.sdtf.chunkId || value.sdtf.chunkName) {
-                stypeValue.asset.chunk = { id: value.sdtf.chunkId, name: value.sdtf.chunkName };
+                stypeValue.asset!.chunk = { id: value.sdtf.chunkId, name: value.sdtf.chunkName };
             }
             requestBody[paramId] = stypeValue;
         }

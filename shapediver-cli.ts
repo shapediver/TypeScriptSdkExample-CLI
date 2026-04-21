@@ -406,14 +406,14 @@ yargs(process.argv.slice(2))
         },
         async (argv) => {
             // handle features
-            let features_true: Array<string> | string = null;
+            let features_true: Array<string> | string | undefined = undefined;
             if (argv.f && (argv.f as string).indexOf(',') > 0) {
                 features_true = (argv.f as string).split(',');
             } else if (argv.f && argv.f != '') {
                 features_true = argv.f;
             }
 
-            let features_false: Array<string> | string = null;
+            let features_false: Array<string> | string | undefined = undefined;
             if (argv.n && (argv.n as string).indexOf(',') > 0) {
                 features_false = (argv.n as string).split(',');
             } else if (argv.n && argv.n != '') {
@@ -429,7 +429,7 @@ yargs(process.argv.slice(2))
             }
 
             // handle organization roles
-            let organization_roles: Array<string> | string = null;
+            let organization_roles: Array<string> | string | undefined = undefined;
             if (argv.r && (argv.r as string).indexOf(',') > 0) {
                 organization_roles = (argv.r as string).split(',');
             } else if (argv.r && argv.r != '') {
@@ -594,8 +594,8 @@ yargs(process.argv.slice(2))
         );
         console.log('');
     })
-    .fail(function (_msg, err, _yargs) {
-        const e = processError(err);
+    .fail(async function (_msg, err, _yargs) {
+        const e = await processError(err);
         let prefix: string;
 
         if (e instanceof SdPlatformError) prefix = `Platform Error:`;

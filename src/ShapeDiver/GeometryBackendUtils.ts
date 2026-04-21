@@ -29,7 +29,7 @@ export const initSession = async (
         basePath: access_data.model_view_url,
         accessToken: access_data.access_token,
     });
-    const dto = await new SessionApi(config).createSessionByTicket(access_data.ticket);
+    const dto = await new SessionApi(config).createSessionByTicket(access_data.ticket!);
 
     return [config, dto.data];
 };
@@ -85,7 +85,7 @@ export const runExport = async (
         maxWaitMsec
     );
 
-    return result.exports[id] as ResExport;
+    return result.exports![id] as ResExport;
 };
 
 /**
@@ -104,13 +104,13 @@ export const uploadModel = async (
     });
 
     // get model info, which will include upload link
-    const dto = (await new ModelApi(config).getModel(access_data.guid)).data;
+    const dto = (await new ModelApi(config).getModel(access_data.guid!)).data;
 
     // upload model
     await new UtilsApi(config).upload(
-        dto.file.upload,
+        dto.file!.upload!,
         await fsp.readFile(filename),
-        dto.setting.compute.ftype === ReqModelFileType.GRASSHOPPER_BINARY
+        dto.setting.compute!.ftype === ReqModelFileType.GRASSHOPPER_BINARY
             ? 'application/octet-stream'
             : 'application/xml'
     );
@@ -148,7 +148,7 @@ export const waitForModelCheck = async (
         dto = (await new ModelApi(config).getModel(dto.model.id)).data;
     }
 
-    const max_comp_time = dto.setting.compute.max_comp_time;
+    const max_comp_time = dto.setting.compute!.max_comp_time;
     console.log(`Maximum allowed computation time: ${max_comp_time}`);
 
     epochStart = Date.now();
@@ -194,7 +194,7 @@ export const getSessionAnalytics = async (
                           timestamp_to,
                       },
                   ]
-                : access_data.guids.map((g) => {
+                : access_data.guids!.map((g) => {
                       return {
                           modelid: [g],
                           timestamp_from,
@@ -242,7 +242,7 @@ export const runShapeDiverGeoJsonModel = async (
         return o.name.toLowerCase().startsWith(text);
     };
 
-    const textParam = Object.values(dto.parameters).find(
+    const textParam = Object.values(dto.parameters!).find(
         (p) => p.type === 'String' && filterByDisplayNameorNameInvariant(p, 'text')
     );
     if (!textParam) {
@@ -251,7 +251,7 @@ export const runShapeDiverGeoJsonModel = async (
         );
     }
 
-    const textFileParam = Object.values(dto.parameters).find(
+    const textFileParam = Object.values(dto.parameters!).find(
         (p) => p.type === 'File' && filterByDisplayNameorNameInvariant(p, 'text')
     );
     if (!textFileParam) {
@@ -260,7 +260,7 @@ export const runShapeDiverGeoJsonModel = async (
         );
     }
 
-    const geojsonOutput = Object.values(dto.outputs).find((o) =>
+    const geojsonOutput = Object.values(dto.outputs!).find((o) =>
         filterByDisplayNameorNameInvariant(o, 'geojson')
     );
     if (!geojsonOutput) {
@@ -269,7 +269,7 @@ export const runShapeDiverGeoJsonModel = async (
         );
     }
 
-    const geojsonExport = Object.values(dto.exports).find(
+    const geojsonExport = Object.values(dto.exports!).find(
         (o) => o.type === 'download' && filterByDisplayNameorNameInvariant(o, 'geojson')
     );
     if (!geojsonExport) {
@@ -281,13 +281,13 @@ export const runShapeDiverGeoJsonModel = async (
     // assign parameter values
     const parameterBody: { [key: string]: string } = {};
     const forceUseFileParam = false;
-    if (forceUseFileParam || geojsonInput.length >= textParam.max) {
+    if (forceUseFileParam || geojsonInput.length >= textParam.max!) {
         // geojson length exceeds maximum length of direct text parameter, upload as file
         const buffer = Buffer.from(geojsonInput, 'utf8');
         // check if 'application/json' is available among allowed content types, otherwise just use whatever we got
-        const contentType = textFileParam.format.includes('application/json')
+        const contentType = textFileParam.format!.includes('application/json')
             ? 'application/json'
-            : textFileParam.format[0];
+            : textFileParam.format![0];
         // request file upload
         const uploadRequest = (
             await new FileApi(config).uploadFile(dto.sessionId, {
@@ -321,7 +321,7 @@ export const runShapeDiverGeoJsonModel = async (
     );
 
     // get output data
-    const geojsonOutputResult = result.outputs[geojsonOutput.id] as ResOutput;
+    const geojsonOutputResult = result.outputs![geojsonOutput.id] as ResOutput;
     if (geojsonOutputResult.status_computation !== 'success') {
         throw new Error(
             `Computation of model failed with status ${geojsonOutputResult.status_computation}`
@@ -337,16 +337,16 @@ export const runShapeDiverGeoJsonModel = async (
     const forceUseExport = false;
     if (
         !forceUseExport &&
-        geojsonOutputResult.content.length === 1 &&
-        geojsonOutputResult.content[0].data &&
-        typeof geojsonOutputResult.content[0].data === 'string'
+        geojsonOutputResult.content!.length === 1 &&
+        geojsonOutputResult.content![0].data &&
+        typeof geojsonOutputResult.content![0].data === 'string'
     ) {
         // The GeoJSON data output provides data, we use it and skip using the export link.
-        geojsonResult = geojsonOutputResult.content[0].data;
+        geojsonResult = geojsonOutputResult.content![0].data;
     } else {
         // In case we didn't get data from the GeoJSON data output, probably the size of the resulting GeoJSON
         // exceeded the limit for data outputs, and we need to download the result from the export link.
-        const geojsonExportResult = result.exports[geojsonExport.id] as ResExport;
+        const geojsonExportResult = result.exports![geojsonExport.id] as ResExport;
 
         if (geojsonExportResult.status_computation !== 'success') {
             throw new Error(
@@ -359,12 +359,12 @@ export const runShapeDiverGeoJsonModel = async (
             );
         }
 
-        if (geojsonExportResult.content.length < 1) {
+        if (geojsonExportResult.content!.length < 1) {
             throw new Error(`Expected a text file resulting from export ${geojsonExport.name}`);
         }
 
         // download from the export link
-        const href = geojsonExportResult.content[0].href;
+        const href = geojsonExportResult.content![0].href;
         const geojsonObject = (await new UtilsApi().download(href, { responseType: 'json' })).data;
         geojsonResult = JSON.stringify(geojsonObject, null, 0);
     }

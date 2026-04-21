@@ -34,7 +34,6 @@ import {
     SdPlatformRequestModelStatus,
     SdPlatformResponseAnalyticsTimestampType,
     SdPlatformResponseModelAdmin,
-    SdPlatformResponseUserAdmin,
     SdPlatformResponseUserPublic,
     SdPlatformSdk,
     SdPlatformValidationResponseError,
@@ -126,12 +125,12 @@ export const displayModelsByModelViewUrl = async (
 
     console.log('Model id;User id;Status;Slug;Title');
     await queryAllMatchingModels(sdk, filters, async ({ id, guid, user, slug, status, title }) => {
-        if (!modelsPerUser[user.id]) {
-            const u = await sdk.users.get<SdPlatformResponseUserPublic>(user.id);
-            modelsPerUser[user.id] = { pending: [], confirmed: [], done: [], email: u.data.email };
+        if (!modelsPerUser[user!.id]) {
+            const u = await sdk.users.get<SdPlatformResponseUserPublic>(user!.id);
+            modelsPerUser[user!.id] = { pending: [], confirmed: [], done: [], email: u.data.email! };
             console.log(u.data.email);
         }
-        modelsPerUser[user.id][status].splice(modelsPerUser[user.id][status].length, 0, {
+        modelsPerUser[user!.id][status].splice(modelsPerUser[user!.id][status].length, 0, {
             id,
             guid,
             slug,
@@ -481,9 +480,9 @@ export const displayUserCreditUsage = async (
     const to = to_s ? dayTimestampToEpoch(to_s) : Math.round(Date.now() / 1000);
     const from = from_s ? dayTimestampToEpoch(from_s) : to - (days + 1) * 86400;
 
-    const data = await queryUserCreditUsage(
+	const data = await queryUserCreditUsage(
         sdk,
-        user_id,
+        user_id!,
         from,
         to,
         SdPlatformResponseAnalyticsTimestampType.Day
@@ -556,7 +555,7 @@ export const sdTFExample = async (
             continue;
         }
         // find a matching parameter for the chunk
-        const params = Object.values(res_session.parameters).filter(
+        const params = Object.values(res_session.parameters!).filter(
             (p) => p.type === parameterType
         );
         if (params.length === 0) {
@@ -600,9 +599,9 @@ export const sdTFExample = async (
                 console.log(
                     `Found sdTF asset for output with name "${output.name}", id "${output.id}"`
                 );
-                await parseSdtf(item.href, data.access_data.access_token);
+                await parseSdtf(item.href!, data.access_data.access_token);
                 if (saveSdtfs) {
-                    const buf = await new UtilsApi(config).download(item.href);
+                    const buf = await new UtilsApi(config).download(item.href!);
                     const filename = `${output.name}_${output.id}:${output.version}.sdtf`;
                     try {
                         await fsp.writeFile(filename, new DataView(buf[1]));
@@ -638,7 +637,7 @@ export const notifyUsersPlatform = async (
     const data = await notifyUsers(sdk, options, notification_options);
 
     console.table(
-        data.map((x: SdPlatformResponseUserAdmin) => {
+        data.map((x: SdPlatformResponseUserPublic) => {
             return {
                 username: x.username,
                 slug: x.slug,

@@ -250,10 +250,10 @@ export const printSdtfInfo = async (asset: ISdtfReadableAsset): Promise<void> =>
             `  Chunk name "${chunk.name}", typeHint "${chunk.typeHint ? chunk.typeHint.name : 'unknown'}":`
         );
 
-        if (Object.keys(chunk.attributes.entries).length > 0) {
+        if (Object.keys(chunk.attributes!.entries).length > 0) {
             console.log(`    Attributes:`);
-            for (const key in chunk.attributes.entries) {
-                const value = await chunk.attributes.entries[key].getContent();
+            for (const key in chunk.attributes!.entries) {
+                const value = await chunk.attributes!.entries[key].getContent();
                 console.log(`      "${key}" => "${value}"`);
             }
         }
@@ -280,7 +280,7 @@ export const getChunkNameFromAttributes = async (
         const key = Object.keys(chunk.attributes.entries).find(
             (k) =>
                 k.toLowerCase() === 'name' &&
-                chunk.attributes.entries[k].typeHint?.name === 'string'
+                chunk.attributes!.entries[k].typeHint?.name === 'string'
         );
         if (key) {
             return (await chunk.attributes.entries[key].getContent()) as string;
